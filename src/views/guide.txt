@@ -1,0 +1,5 @@
+Purpose: These are your route-level components. If a component is directly tied to a URL in your router/index.ts, 
+it belongs here (e.g., HomeView.vue, DashboardView.vue).
+
+Best Practice: Keep these files focused on fetching data and passing it down. They shouldn't contain complex UI HTML; 
+they should import smaller pieces from your components/ folder.

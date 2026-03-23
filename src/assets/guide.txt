@@ -1,0 +1,1 @@
+Purpose: Global stylesheets (main.css or variables.scss), local fonts, and images that need to be processed by Vite's bundler.

@@ -1,0 +1,5 @@
+Purpose: This is where you abstract away your API calls. Your Vue components should rarely call axios.get() or fetch() 
+directly.
+
+Best Practice: Create modular files like auth.service.ts or user.service.ts. This makes it incredibly easy to update your 
+API endpoints later without hunting through dozens of Vue files.
