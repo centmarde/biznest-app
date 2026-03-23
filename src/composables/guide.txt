@@ -1,0 +1,4 @@
+Purpose: The home for custom Vue hooks. If you find yourself writing the same reactive logic across multiple 
+components (like managing window size, handling form validation, or dark mode toggling), extract it here.
+
+Best Practice: Prefix these files with use (e.g., useTheme.ts, useWindowResize.ts).

@@ -1,0 +1,4 @@
+Purpose: Pure, non-reactive TypeScript functions.
+
+Best Practice: Use this for things like date formatters (formatDate.ts), string manipulators, 
+or complex mathematical calculations. If it doesn't need to import anything from vue, it belongs here.

@@ -1,0 +1,4 @@
+Purpose: A centralized place for your TypeScript definitions.
+
+Best Practice: Create files like user.types.ts or api.types.ts to hold your interfaces and type aliases. 
+This keeps your Vue components clean and makes your data models reusable across your stores, services, and components.

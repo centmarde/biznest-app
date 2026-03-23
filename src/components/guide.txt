@@ -1,0 +1,4 @@
+Purpose: Reusable, isolated UI pieces.
+
+Best Practice: As this folder grows, group components by domain or feature 
+(e.g., components/ui/ for generic buttons/inputs, and components/users/ for user-specific cards).

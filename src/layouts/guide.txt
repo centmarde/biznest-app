@@ -1,0 +1,2 @@
+Purpose: Wrapper components that dictate the structure of a page. For example, a DashboardLayout.vue might include 
+your sidebar and top navigation, while an AuthLayout.vue might just be a centered blank page for logging in.
