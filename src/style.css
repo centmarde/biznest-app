@@ -1,9 +1,35 @@
 @import 'tailwindcss';
-@import "tw-animate-css";
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
+/* 1. Define the local fonts */
+@font-face {
+  font-family: 'SF Pro Display';
+  font-style: normal;
+  font-weight: 400; /* Regular */
+  font-display: swap;
+  src: url('./assets/fonts/SF-Pro-Display-Regular.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  font-style: normal;
+  font-weight: 600; /* Semibold */
+  font-display: swap;
+  src: url('./assets/fonts/SF-Pro-Display-Semibold.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  font-style: normal;
+  font-weight: 800; /* Heavy / Black */
+  font-display: swap;
+  src: url('./assets/fonts/SF-Pro-Display-Heavy.otf') format('opentype');
+}
+
 @theme inline {
+  --font-sans: 'SF Pro Display', ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -115,6 +141,6 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }
