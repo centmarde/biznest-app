@@ -25,7 +25,7 @@ import logoImage from '@/assets/images/logo.png'
             class="h-full w-full object-contain dark:brightness-90"
           />
         </span>
-        <span>BizNest</span>
+        <span class="text-2xl">BizNest</span>
       </RouterLink>
 
       <div class="flex items-center gap-4">

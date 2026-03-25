@@ -23,7 +23,7 @@ const delegatedProps = reactiveOmit(props, 'class')
   <Primitive
     data-slot="typography-muted"
     v-bind="delegatedProps"
-    :class="cn('text-foreground/60 text-sm', props.class)"
+    :class="cn('text-foreground/70 text-sm', props.class)"
   >
     <slot />
   </Primitive>
