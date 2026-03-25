@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import HeroSection from './components/HeroSection.vue'
+import ProblemSection from './components/ProblemSection.vue'
 </script>
 
 <template>
-  <div class="flex w-full max-w-screen-2xl mx-auto items-center justify-center">
+  <div class="w-full">
     <HeroSection />
+    <ProblemSection />
   </div>
 </template>
 
