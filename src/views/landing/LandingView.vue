@@ -3,7 +3,7 @@ import HeroSection from './components/HeroSection.vue'
 </script>
 
 <template>
-  <div class="flex w-full items-center justify-center rounded-lg">
+  <div class="flex w-full max-w-screen-2xl mx-auto items-center justify-center">
     <HeroSection />
   </div>
 </template>
