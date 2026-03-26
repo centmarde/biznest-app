@@ -71,7 +71,7 @@
 :root {
   --radius: 0.625rem;
   --background: #f3f4f4;
-  --bg-far: #e9e9e9;
+  --bg-far: #ebebeb;
   --foreground: #122344;
   --card: #ffffff;
   --card-foreground: #1a3263;
@@ -83,7 +83,7 @@
   --secondary-foreground: #f3f4f4;
   --muted: #e7eaec;
   --muted-foreground: #547792;
-  --accent: #fab95b;
+  --accent: #dfa452;
   --accent-foreground: #1a3263;
   --destructive: oklch(0.577 0.245 27.325);
   --border: #d9e0e5;
@@ -118,7 +118,7 @@
   --secondary-foreground: #f3f4f4;
   --muted: #223c70;
   --muted-foreground: #cfd9e0;
-  --accent: #547792;
+  --accent: #fab95b;
   --accent-foreground: #f3f4f4;
   --destructive: oklch(0.704 0.191 22.216);
   --border: rgb(243 244 244 / 16%);

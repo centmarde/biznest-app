@@ -11,7 +11,7 @@ import logoImage from '@/assets/images/logo.png'
 
 <template>
   <nav class="border-b bg-background">
-    <div class="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
+    <div class="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between px-4">
       <RouterLink
         to="/"
         class="text-md text-foreground dark:text-primary inline-flex items-center gap-3 font-semibold tracking-wide"
@@ -25,7 +25,7 @@ import logoImage from '@/assets/images/logo.png'
             class="h-full w-full object-contain dark:brightness-90"
           />
         </span>
-        <span>BizNest</span>
+        <span class="text-2xl">BizNest</span>
       </RouterLink>
 
       <div class="flex items-center gap-4">
@@ -36,12 +36,7 @@ import logoImage from '@/assets/images/logo.png'
           <RouterLink to="/about">About</RouterLink>
         </Button>
         <ModeToggle />
-        <Button
-          as-child
-          variant="outline"
-          size="sm"
-          class="bg-foreground text-background hover:bg-foreground/90 hover:text-background/90 dark:bg-foreground dark:text-background dark:hover:bg-foreground/90 dark:hover:text-background/90"
-        >
+        <Button as-child size="sm">
           <RouterLink to="/login">Get Started</RouterLink>
         </Button>
       </div>
