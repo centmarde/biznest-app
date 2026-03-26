@@ -7,6 +7,8 @@ defineOptions({
 
 import TypographyH2 from '@/components/typography/TypographyH2.vue'
 import TypographyH3 from '@/components/typography/TypographyH3.vue'
+import TypographyMuted from '@/components/typography/TypographyMuted.vue'
+import TypographySmall from '@/components/typography/TypographySmall.vue'
 import Button from '@/components/ui/button/Button.vue'
 </script>
 
@@ -16,8 +18,9 @@ import Button from '@/components/ui/button/Button.vue'
       <!-- Heading -->
       <div class="mx-auto mb-14 max-w-3xl text-center md:mb-16">
         <TypographyH2>
-          Finding a profitable location is usually a guessing game.<span class="text-accent"
-            >We turned it into a science.</span
+          Finding a profitable location is usually a guessing game.
+          <TypographyMuted as="span" class="inline text-inherit text-accent"
+            >We turned it into a science.</TypographyMuted
           >
         </TypographyH2>
       </div>
@@ -81,9 +84,12 @@ import Button from '@/components/ui/button/Button.vue'
           </div>
 
           <!-- Label -->
-          <p class="text-[0.65rem] font-bold uppercase tracking-widest text-muted-foreground">
+          <TypographySmall
+            as="p"
+            class="text-[0.65rem] font-bold uppercase tracking-widest text-muted-foreground"
+          >
             The Old Way
-          </p>
+          </TypographySmall>
 
           <!-- Title row -->
           <div class="mt-3 flex items-center gap-2.5">
@@ -101,9 +107,11 @@ import Button from '@/components/ui/button/Button.vue'
                 class="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center text-destructive font-bold text-sm leading-none"
                 >✕</span
               >
-              <span class="text-sm leading-relaxed text-muted-foreground md:text-[0.95rem]">{{
-                point
-              }}</span>
+              <TypographyMuted
+                as="span"
+                class="text-sm leading-relaxed text-muted-foreground md:text-[0.95rem]"
+                >{{ point }}</TypographyMuted
+              >
             </li>
           </ul>
         </article>
@@ -134,17 +142,20 @@ import Button from '@/components/ui/button/Button.vue'
             </div>
 
             <!-- "the Solution" pill -->
-            <span
-              class="inline-flex items-center rounded-full bg-success px-5 py-1.5 text-sm font-semibold text-success-foreground shadow-sm"
-            >
-              the Solution
+            <span class="inline-flex items-center rounded-full bg-success px-5 py-1.5 shadow-sm">
+              <TypographySmall as="span" class="font-semibold text-success-foreground"
+                >the Solution</TypographySmall
+              >
             </span>
           </div>
 
           <!-- Label -->
-          <p class="text-[0.65rem] font-bold uppercase tracking-widest text-muted-foreground">
+          <TypographySmall
+            as="p"
+            class="text-[0.65rem] font-bold uppercase tracking-widest text-muted-foreground"
+          >
             The BizNest Way
-          </p>
+          </TypographySmall>
 
           <!-- Title row -->
           <div class="mt-3 flex items-center gap-2.5">
@@ -162,9 +173,11 @@ import Button from '@/components/ui/button/Button.vue'
                 class="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center text-success font-bold text-sm leading-none"
                 >✓</span
               >
-              <span class="text-sm leading-relaxed text-muted-foreground md:text-[0.95rem]">{{
-                point
-              }}</span>
+              <TypographyMuted
+                as="span"
+                class="text-sm leading-relaxed text-muted-foreground md:text-[0.95rem]"
+                >{{ point }}</TypographyMuted
+              >
             </li>
           </ul>
         </article>
@@ -172,8 +185,16 @@ import Button from '@/components/ui/button/Button.vue'
 
       <!-- CTA Buttons -->
       <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-        <Button size="lg" class="text-lg"> See How It Works </Button>
-        <Button variant="ghost" size="lg" class="text-lg"> Start Finding Locations </Button>
+        <Button size="lg" class="text-lg">
+          <TypographySmall as="span" class="text-current text-lg leading-none"
+            >See How It Works</TypographySmall
+          >
+        </Button>
+        <Button variant="ghost" size="lg" class="text-lg">
+          <TypographySmall as="span" class="text-current text-lg leading-none"
+            >Start Finding Locations</TypographySmall
+          >
+        </Button>
       </div>
     </div>
   </section>
