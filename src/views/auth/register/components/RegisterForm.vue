@@ -13,6 +13,7 @@ import {
   FieldSeparator,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { useAlertContext } from '@/composables/useAlert'
 import { signUpWithEmail } from '@/services/auth.service'
 import logoImage from '@/assets/images/logo.png'
 
@@ -21,6 +22,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const { showSuccess } = useAlertContext()
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const email = ref('')
@@ -28,11 +30,9 @@ const password = ref('')
 const confirmPassword = ref('')
 const isSubmitting = ref(false)
 const errorMessage = ref('')
-const successMessage = ref('')
 
 const handleSubmit = async (): Promise<void> => {
   errorMessage.value = ''
-  successMessage.value = ''
 
   if (!email.value || !password.value || !confirmPassword.value) {
     errorMessage.value = 'Please fill in every field.'
@@ -58,12 +58,18 @@ const handleSubmit = async (): Promise<void> => {
     })
 
     if (response.session) {
+      showSuccess('Your account has been created and you are now signed in.', {
+        title: 'Account created',
+      })
       await router.push('/')
       return
     }
 
-    successMessage.value =
-      'Account created. Check your inbox to confirm your email before signing in.'
+    showSuccess('Check your inbox to confirm your email before signing in.', {
+      title: 'Account created',
+      durationMs: 4500,
+    })
+
     password.value = ''
     confirmPassword.value = ''
   } catch (error) {
@@ -220,9 +226,6 @@ const handleSubmit = async (): Promise<void> => {
             </Field>
             <Field v-if="errorMessage">
               <FieldError>{{ errorMessage }}</FieldError>
-            </Field>
-            <Field v-if="successMessage">
-              <FieldDescription class="text-green-700">{{ successMessage }}</FieldDescription>
             </Field>
             <Field>
               <Button type="submit" :disabled="isSubmitting">

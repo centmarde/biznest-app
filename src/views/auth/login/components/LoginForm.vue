@@ -13,6 +13,7 @@ import {
   FieldSeparator,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { useAlertContext } from '@/composables/useAlert'
 import { signInWithEmail } from '@/services/auth.service'
 import logoImage from '@/assets/images/logo.png'
 
@@ -21,6 +22,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const { showSuccess } = useAlertContext()
 const showPassword = ref(false)
 const email = ref('')
 const password = ref('')
@@ -41,6 +43,10 @@ const handleSubmit = async (): Promise<void> => {
     await signInWithEmail({
       email: email.value,
       password: password.value,
+    })
+
+    showSuccess('You are now signed in to your BizNest account.', {
+      title: 'Login successful',
     })
 
     await router.push('/')
