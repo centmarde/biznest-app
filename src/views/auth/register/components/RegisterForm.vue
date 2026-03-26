@@ -86,7 +86,7 @@ const props = defineProps<{
               </Button>
             </Field>
             <FieldDescription class="text-center">
-              Already have an account? <a href="#">Sign in</a>
+              Already have an account? <a href="/auth">Sign in</a>
             </FieldDescription>
           </FieldGroup>
         </form>

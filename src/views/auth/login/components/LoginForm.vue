@@ -78,7 +78,7 @@ const props = defineProps<{
             </Field>
             <FieldDescription class="text-center">
               Don't have an account?
-              <a href="#"> Sign up </a>
+              <a href="/auth/register"> Sign up </a>
             </FieldDescription>
           </FieldGroup>
         </form>
