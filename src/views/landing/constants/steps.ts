@@ -8,6 +8,11 @@ export interface StepGuideItem {
   icon: StepIcon
 }
 
+export interface StepVisualStyle {
+  iconBadge: string
+  cardHover: string
+}
+
 export const stepGuideItems: StepGuideItem[] = [
   {
     step: 'Step 01',
@@ -34,3 +39,21 @@ export const stepGuideItems: StepGuideItem[] = [
     icon: 'handshake',
   },
 ]
+
+export const stepVisualMap: Record<StepIcon, StepVisualStyle> = {
+  'map-pin': {
+    iconBadge:
+      'border-secondary/40 bg-secondary/15 text-secondary group-hover:bg-secondary/25 group-hover:text-secondary',
+    cardHover: 'hover:border-secondary/55 hover:shadow-lg hover:shadow-secondary/25',
+  },
+  sparkles: {
+    iconBadge:
+      'border-accent/40 bg-accent/15 text-accent group-hover:bg-accent/25 group-hover:text-accent',
+    cardHover: 'hover:border-accent/55 hover:shadow-lg hover:shadow-accent/25',
+  },
+  handshake: {
+    iconBadge:
+      'border-success/35 bg-success/15 text-success group-hover:bg-success/25 group-hover:text-success',
+    cardHover: 'hover:border-success/50 hover:shadow-lg hover:shadow-success/20',
+  },
+}

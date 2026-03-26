@@ -6,7 +6,12 @@ import TypographyLarge from '@/components/typography/TypographyLarge.vue'
 import TypographyMuted from '@/components/typography/TypographyMuted.vue'
 import TypographySmall from '@/components/typography/TypographySmall.vue'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { stepGuideItems, type StepGuideItem, type StepIcon } from '../constants/steps'
+import {
+  stepGuideItems,
+  stepVisualMap,
+  type StepGuideItem,
+  type StepIcon,
+} from '../constants/steps'
 
 defineOptions({
   name: 'StepsSection',
@@ -19,6 +24,8 @@ const iconMap: Record<StepIcon, Component> = {
 }
 
 const resolveIcon = (icon: StepGuideItem['icon']): Component => iconMap[icon]
+const resolveIconBadgeClass = (icon: StepGuideItem['icon']): string => stepVisualMap[icon].iconBadge
+const resolveCardHoverClass = (icon: StepGuideItem['icon']): string => stepVisualMap[icon].cardHover
 </script>
 
 <template>
@@ -30,7 +37,7 @@ const resolveIcon = (icon: StepGuideItem['icon']): Component => iconMap[icon]
           Your Roadmap
         </TypographySmall>
         <TypographyH2 as="h2" class="border-0 pb-0 text-balance">
-          Go from business idea to the right location in 3 smart steps.
+          Go from business idea to the right location in 3 smart steps
         </TypographyH2>
         <TypographyMuted class="mx-auto mt-2 max-w-2xl text-base leading-relaxed md:text-lg">
           BizNest helps you decide, validate, and connect, so your next move is guided by data
@@ -43,14 +50,24 @@ const resolveIcon = (icon: StepGuideItem['icon']): Component => iconMap[icon]
         <Card
           v-for="item in stepGuideItems"
           :key="item.step"
-          class="h-full border-border/80 bg-card/95 transition-transform duration-300 hover:-translate-y-1"
+          :class="[
+            'group h-full border-border/80 bg-card/95 transition-all duration-300 hover:-translate-y-1',
+            resolveCardHoverClass(item.icon),
+          ]"
         >
           <CardHeader class="gap-4 pb-2">
             <div class="flex items-center justify-between gap-3">
               <div
-                class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-primary/8 text-primary"
+                :class="[
+                  'flex h-11 w-11 items-center justify-center rounded-xl border transition-colors duration-300',
+                  resolveIconBadgeClass(item.icon),
+                ]"
               >
-                <component :is="resolveIcon(item.icon)" class="h-5 w-5" aria-hidden="true" />
+                <component
+                  :is="resolveIcon(item.icon)"
+                  class="h-5 w-5 transition-transform duration-300 group-hover:scale-110"
+                  aria-hidden="true"
+                />
               </div>
               <TypographySmall as="span" class="uppercase tracking-wider text-muted-foreground">
                 {{ item.step }}
