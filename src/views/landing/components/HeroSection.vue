@@ -8,13 +8,7 @@ import Button from '@/components/ui/button/Button.vue'
 import TypographyH1 from '@/components/typography/TypographyH1.vue'
 import TypographyMuted from '@/components/typography/TypographyMuted.vue'
 import TypographyList from '@/components/typography/TypographyList.vue'
-import navigatuLogo from '@/assets/images/navigatu.jpg'
-import csuLogo from '@/assets/images/csu.png'
-
-const partners = [
-  { name: 'Navigatu TBI', logoUrl: navigatuLogo },
-  { name: 'Caraga State University', logoUrl: csuLogo },
-]
+import { partners } from '../constants/partners'
 </script>
 
 <template>
