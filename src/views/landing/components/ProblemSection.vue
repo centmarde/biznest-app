@@ -16,10 +16,10 @@ import Button from '@/components/ui/button/Button.vue'
   <section class="w-full bg-background py-20 md:py-28">
     <div class="mx-auto w-full max-w-screen-xl px-6 md:px-10">
       <!-- Heading -->
-      <div class="mx-auto mb-14 max-w-3xl text-center md:mb-16">
+      <div class="mx-auto mb-14 max-w-4xl text-center md:mb-16">
         <TypographyH2>
-          Finding a profitable location is usually a guessing game.
-          <TypographyMuted as="span" class="inline text-inherit text-accent"
+          Finding a profitable location is usually a guessing game. <br />
+          <TypographyMuted as="span" class="inline text-inherit text-accent text-4xl"
             >We turned it into a science.</TypographyMuted
           >
         </TypographyH2>
@@ -185,13 +185,13 @@ import Button from '@/components/ui/button/Button.vue'
 
       <!-- CTA Buttons -->
       <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-        <Button size="lg" class="text-lg">
-          <TypographySmall as="span" class="text-current text-lg leading-none"
+        <Button>
+          <TypographySmall as="span" class="text-current text-md leading-none"
             >See How It Works</TypographySmall
           >
         </Button>
-        <Button variant="ghost" size="lg" class="text-lg">
-          <TypographySmall as="span" class="text-current text-lg leading-none"
+        <Button variant="ghost">
+          <TypographySmall as="span" class="text-current text-md leading-none"
             >Start Finding Locations</TypographySmall
           >
         </Button>
