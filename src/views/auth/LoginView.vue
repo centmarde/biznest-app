@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import LoginForm from '@/components/new-york-v4/blocks/login-02/components/LoginForm.vue'
+import LoginForm from './components/LoginForm.vue'
 import coverImage from '@/assets/images/navigatu.jpg'
 import Navbar from '@/components/Navbar.vue'
 </script>
