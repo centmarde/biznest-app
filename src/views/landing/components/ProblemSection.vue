@@ -19,7 +19,7 @@ import Button from '@/components/ui/button/Button.vue'
       <div class="mx-auto mb-14 max-w-3xl text-center md:mb-16">
         <TypographyH2>
           Finding a profitable location is usually a guessing game.
-          <TypographyMuted as="span" class="inline text-inherit text-accent"
+          <TypographyMuted as="span" class="inline text-inherit text-accent text-4xl"
             >We turned it into a science.</TypographyMuted
           >
         </TypographyH2>
