@@ -8,45 +8,39 @@ import Button from '@/components/ui/button/Button.vue'
 import TypographyH1 from '@/components/typography/TypographyH1.vue'
 import TypographyMuted from '@/components/typography/TypographyMuted.vue'
 import TypographyList from '@/components/typography/TypographyList.vue'
-import navigatuLogo from '@/assets/images/navigatu.jpg'
-import csuLogo from '@/assets/images/csu.png'
-
-const partners = [
-  { name: 'Navigatu TBI', logoUrl: navigatuLogo },
-  { name: 'Caraga State University', logoUrl: csuLogo },
-]
+import { partners } from '../constants/partners'
 </script>
 
 <template>
-  <section class="relative overflow-hidden text-white py-20">
+  <section class="relative w-full overflow-hidden py-20 text-white md:py-28">
     <div
-      class="w-full max-w-screen-xl mx-auto px-10 mt-10 flex flex-col md:flex-row items-center gap-6"
+      class="mx-auto flex w-full max-w-screen-xl flex-col items-center gap-8 px-6 md:flex-row md:gap-10 md:px-10"
     >
       <!-- Left: Text & CTAs -->
       <div class="flex-1 flex flex-col items-start text-left">
-        <Badge class="mb-4">For Growth-Minded Founders</Badge>
+        <Badge class="mb-4">For Growth-Minded Founders <br /></Badge>
         <TypographyH1 class="mb-3">
-          Smart <span class="text-accent">Locations.</span> Stronger
+          Smart <span class="text-accent">Locations. <br /></span> Stronger
           <span class="text-accent">Connections.</span> Powered by AI.
         </TypographyH1>
-        <TypographyMuted class="text-lg md:text-2xl mb-6 max-w-xl">
+        <TypographyMuted class="text-lg md:text-xl mb-6 max-w-xl">
           An AI-powered system that helps choose business locations and connects local businesses in
           your city.
         </TypographyMuted>
 
         <!-- CTA Buttons -->
         <div class="flex gap-3 mb-6">
-          <Button as-child size="lg" class="text-lg">
-            <RouterLink to="/register">Join Us</RouterLink>
+          <Button as-child>
+            <RouterLink to="/register">Join BizNest Now</RouterLink>
           </Button>
-          <Button as-child variant="ghost" size="lg" class="text-lg">
-            <RouterLink to="/learn-more">Learn More</RouterLink>
+          <Button as-child variant="ghost">
+            <RouterLink to="/learn-more">See How AI Helps</RouterLink>
           </Button>
         </div>
 
         <!-- Benefit Bullets -->
         <TypographyList
-          class="my-0 ml-0 list-none flex flex-col gap-2 text-lg text-foreground/90 [&>li]:mt-0"
+          class="my-0 ml-0 list-none flex flex-col gap-2 text-md text-foreground/90 [&>li]:mt-0"
         >
           <li class="flex items-center gap-2">
             <span class="w-1.5 h-1.5 rounded-full bg-foreground/50 shrink-0"></span>
@@ -76,12 +70,12 @@ const partners = [
         </div>
       </div>
     </div>
-    <div class="mt-20 w-full border-t border-white/10 pt-10 px-10">
+    <div class="mt-16 w-full border-t border-white/10 px-6 pt-10 md:px-10">
       <div
-        class="w-full max-w-screen-xl mx-auto flex flex-col items-center justify-center gap-6 md:flex-row md:gap-12"
+        class="mx-auto flex w-full max-w-screen-xl flex-col items-center justify-center gap-6 md:flex-row md:gap-12"
       >
         <span
-          class="text-lg font-semibold uppercase tracking-widest text-foreground/80 text-center"
+          class="text-md font-semibold uppercase tracking-widest text-foreground/80 text-center"
         >
           In partnership with
         </span>
@@ -95,10 +89,10 @@ const partners = [
             <img
               :src="partner.logoUrl"
               :alt="partner.name"
-              class="h-8 md:h-14 w-auto object-contain rounded-full"
+              class="h-8 md:h-12 w-auto object-contain rounded-full"
               @error="(e) => ((e.target as HTMLElement).style.display = 'none')"
             />
-            <span class="text-sm md:text-lg font-medium text-foreground/90">
+            <span class="text-md md:text-lg font-medium text-foreground/90">
               {{ partner.name }}
             </span>
           </div>
