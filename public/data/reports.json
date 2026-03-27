@@ -7,49 +7,49 @@
         {
           "businessOwner": "John Smith Enterprises",
           "ownerNumber": "0917-100-1001",
-          "ownerAddress": "Purok 1, J.C. Aquino Ave, Brgy. Doongan, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 1, J.C. Aquino Ave, Brgy. Doongan, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12545, 125.54875"
         },
         {
           "businessOwner": "Maria Garcia Retail Co.",
           "ownerNumber": "0917-100-1002",
-          "ownerAddress": "Blk 3 Lot 8, Brgy. Libertad, Butuan City, Agusan del Norte",
+          "businessLocation": "Blk 3 Lot 8, Brgy. Libertad, Butuan City, Agusan del Norte",
           "zoningClassification": "Residential-Commercial Mix",
           "geotag": "8.13256, 125.55234"
         },
         {
           "businessOwner": "Tech Hub Solutions",
           "ownerNumber": "0917-100-1003",
-          "ownerAddress": "Purok 5, Brgy. Ampayon, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 5, Brgy. Ampayon, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone B",
           "geotag": "8.14123, 125.55890"
         },
         {
           "businessOwner": "Prime Logistics Ltd.",
           "ownerNumber": "0917-100-1004",
-          "ownerAddress": "Sitio Portside, Brgy. Masao, Butuan City, Agusan del Norte",
+          "businessLocation": "Sitio Portside, Brgy. Masao, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone B",
           "geotag": "8.15432, 125.56123"
         },
         {
           "businessOwner": "Blue Harbor Trading",
           "ownerNumber": "0917-100-1005",
-          "ownerAddress": "Purok 2, Brgy. Baan Riverside, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 2, Brgy. Baan Riverside, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12945, 125.55192"
         },
         {
           "businessOwner": "Greenfield Agro Supply",
           "ownerNumber": "0917-100-1006",
-          "ownerAddress": "Purok 7, Brgy. Tiniwisan, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 7, Brgy. Tiniwisan, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone C",
           "geotag": "8.15810, 125.56544"
         },
         {
           "businessOwner": "Metro Link Services",
           "ownerNumber": "0917-100-1007",
-          "ownerAddress": "Montilla Blvd, Brgy. Dagohoy, Butuan City, Agusan del Norte",
+          "businessLocation": "Montilla Blvd, Brgy. Dagohoy, Butuan City, Agusan del Norte",
           "zoningClassification": "Residential-Commercial Mix",
           "geotag": "8.13672, 125.55468"
         }
@@ -62,56 +62,56 @@
         {
           "businessOwner": "Downtown Cafe Hub",
           "ownerNumber": "0917-200-2001",
-          "ownerAddress": "J.C. Aquino Ave, Brgy. Ong Yiu, Butuan City, Agusan del Norte",
+          "businessLocation": "J.C. Aquino Ave, Brgy. Ong Yiu, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12700, 125.54950"
         },
         {
           "businessOwner": "Neighborhood Market",
           "ownerNumber": "0917-200-2002",
-          "ownerAddress": "Purok 3, Brgy. Bading, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 3, Brgy. Bading, Butuan City, Agusan del Norte",
           "zoningClassification": "Residential-Commercial Mix",
           "geotag": "8.13400, 125.55300"
         },
         {
           "businessOwner": "Manufacturing Plus",
           "ownerNumber": "0917-200-2003",
-          "ownerAddress": "Baan KM 3 Rd, Brgy. Baan KM 3, Butuan City, Agusan del Norte",
+          "businessLocation": "Baan KM 3 Rd, Brgy. Baan KM 3, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone B",
           "geotag": "8.14200, 125.56000"
         },
         {
           "businessOwner": "Office Plaza Corp",
           "ownerNumber": "0917-200-2004",
-          "ownerAddress": "Montilla Blvd, Brgy. Diego Silang, Butuan City, Agusan del Norte",
+          "businessLocation": "Montilla Blvd, Brgy. Diego Silang, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12850, 125.55100"
         },
         {
           "businessOwner": "Distribution Center",
           "ownerNumber": "0917-200-2005",
-          "ownerAddress": "Purok 6, Brgy. Bancasi, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 6, Brgy. Bancasi, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone C",
           "geotag": "8.15600, 125.56400"
         },
         {
           "businessOwner": "City Pharmacy Point",
           "ownerNumber": "0917-200-2006",
-          "ownerAddress": "A.D. Curato St, Brgy. Holy Redeemer, Butuan City, Agusan del Norte",
+          "businessLocation": "A.D. Curato St, Brgy. Holy Redeemer, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12930, 125.55140"
         },
         {
           "businessOwner": "Northside Auto Care",
           "ownerNumber": "0917-200-2007",
-          "ownerAddress": "Purok 4, Brgy. Sumile, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 4, Brgy. Sumile, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone B",
           "geotag": "8.14460, 125.56220"
         },
         {
           "businessOwner": "Community Learning Hub",
           "ownerNumber": "0917-200-2008",
-          "ownerAddress": "Purok 2, Brgy. Lemon, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 2, Brgy. Lemon, Butuan City, Agusan del Norte",
           "zoningClassification": "Residential-Commercial Mix",
           "geotag": "8.13370, 125.55390"
         }
@@ -124,35 +124,35 @@
         {
           "businessOwner": "Elite Trading Company",
           "ownerNumber": "0917-300-3001",
-          "ownerAddress": "Purok 1, Brgy. Golden Ribbon, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 1, Brgy. Golden Ribbon, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12600, 125.54900"
         },
         {
           "businessOwner": "Premium Services Inc",
           "ownerNumber": "0917-300-3002",
-          "ownerAddress": "J. Rosales Ave, Brgy. New Society Village, Butuan City, Agusan del Norte",
+          "businessLocation": "J. Rosales Ave, Brgy. New Society Village, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12700, 125.55000"
         },
         {
           "businessOwner": "Innovation Tech Park",
           "ownerNumber": "0917-300-3003",
-          "ownerAddress": "Purok 9, Brgy. Ampayon, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 9, Brgy. Ampayon, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone B",
           "geotag": "8.14300, 125.56100"
         },
         {
           "businessOwner": "Sunrise Ventures",
           "ownerNumber": "0917-300-3004",
-          "ownerAddress": "Purok 5, Brgy. Ambago, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 5, Brgy. Ambago, Butuan City, Agusan del Norte",
           "zoningClassification": "Residential-Commercial Mix",
           "geotag": "8.13500, 125.55400"
         },
         {
           "businessOwner": "Global Export Co",
           "ownerNumber": "0917-300-3005",
-          "ownerAddress": "Bancasi Airport Rd, Brgy. Bancasi, Butuan City, Agusan del Norte",
+          "businessLocation": "Bancasi Airport Rd, Brgy. Bancasi, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone B",
           "geotag": "8.14500, 125.56300"
         }
@@ -165,49 +165,49 @@
         {
           "businessOwner": "Wholesale Supplies Ltd",
           "ownerNumber": "0917-400-4001",
-          "ownerAddress": "Purok 4, Brgy. Kinamlutan, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 4, Brgy. Kinamlutan, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone B",
           "geotag": "8.13900, 125.55800"
         },
         {
           "businessOwner": "Raw Materials Co",
           "ownerNumber": "0917-400-4002",
-          "ownerAddress": "Purok 2, Brgy. Sumilihon, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 2, Brgy. Sumilihon, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone C",
           "geotag": "8.15400, 125.56200"
         },
         {
           "businessOwner": "Quick Delivery Dist",
           "ownerNumber": "0917-400-4003",
-          "ownerAddress": "Purok 7, Brgy. Banza, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 7, Brgy. Banza, Butuan City, Agusan del Norte",
           "zoningClassification": "Residential-Commercial Mix",
           "geotag": "8.13200, 125.55200"
         },
         {
           "businessOwner": "Premium Stock Hub",
           "ownerNumber": "0917-400-4004",
-          "ownerAddress": "Narra Rd, Brgy. Salvacion, Butuan City, Agusan del Norte",
+          "businessLocation": "Narra Rd, Brgy. Salvacion, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12750, 125.55050"
         },
         {
           "businessOwner": "Harborline Packaging",
           "ownerNumber": "0917-400-4005",
-          "ownerAddress": "Purok 5, Brgy. Lumbocan, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 5, Brgy. Lumbocan, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone B",
           "geotag": "8.14620, 125.56280"
         },
         {
           "businessOwner": "Summit Cold Storage",
           "ownerNumber": "0917-400-4006",
-          "ownerAddress": "Purok 10, Brgy. Dulag, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 10, Brgy. Dulag, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone C",
           "geotag": "8.15840, 125.56580"
         },
         {
           "businessOwner": "Central Office Depot",
           "ownerNumber": "0917-400-4007",
-          "ownerAddress": "2nd St, Brgy. Holy Redeemer, Butuan City, Agusan del Norte",
+          "businessLocation": "2nd St, Brgy. Holy Redeemer, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12910, 125.55120"
         }
@@ -220,56 +220,56 @@
         {
           "businessOwner": "Downtown Plaza - Unit 102",
           "ownerNumber": "0917-500-5001",
-          "ownerAddress": "Purok 1, Brgy. Ong Yiu, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 1, Brgy. Ong Yiu, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12600, 125.54900"
         },
         {
           "businessOwner": "Business Center - 3rd Floor",
           "ownerNumber": "0917-500-5002",
-          "ownerAddress": "Purok 6, Brgy. Doongan, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 6, Brgy. Doongan, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12800, 125.55050"
         },
         {
           "businessOwner": "Industrial Park - Building 3",
           "ownerNumber": "0917-500-5003",
-          "ownerAddress": "Purok 11, Brgy. Ampayon, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 11, Brgy. Ampayon, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone B",
           "geotag": "8.14100, 125.55950"
         },
         {
           "businessOwner": "Mixed-Use Complex - Suite 405",
           "ownerNumber": "0917-500-5004",
-          "ownerAddress": "Purok 3, Brgy. Ambago, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 3, Brgy. Ambago, Butuan City, Agusan del Norte",
           "zoningClassification": "Residential-Commercial Mix",
           "geotag": "8.13300, 125.55350"
         },
         {
           "businessOwner": "Warehouse Space - Lot 7",
           "ownerNumber": "0917-500-5005",
-          "ownerAddress": "Purok 9, Brgy. Bancasi, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 9, Brgy. Bancasi, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone C",
           "geotag": "8.15500, 125.56350"
         },
         {
           "businessOwner": "Riverside Arcade - Stall 12",
           "ownerNumber": "0917-500-5006",
-          "ownerAddress": "Riverside Rd, Brgy. Baan Riverside, Butuan City, Agusan del Norte",
+          "businessLocation": "Riverside Rd, Brgy. Baan Riverside, Butuan City, Agusan del Norte",
           "zoningClassification": "Commercial Zone A",
           "geotag": "8.12760, 125.55010"
         },
         {
           "businessOwner": "Innovation Park - Block D",
           "ownerNumber": "0917-500-5007",
-          "ownerAddress": "Purok 12, Brgy. Tiniwisan, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 12, Brgy. Tiniwisan, Butuan City, Agusan del Norte",
           "zoningClassification": "Industrial Zone B",
           "geotag": "8.14390, 125.56070"
         },
         {
           "businessOwner": "Corner Hub - Unit 8B",
           "ownerNumber": "0917-500-5008",
-          "ownerAddress": "Purok 2, Brgy. Libertad, Butuan City, Agusan del Norte",
+          "businessLocation": "Purok 2, Brgy. Libertad, Butuan City, Agusan del Norte",
           "zoningClassification": "Residential-Commercial Mix",
           "geotag": "8.13420, 125.55410"
         }
