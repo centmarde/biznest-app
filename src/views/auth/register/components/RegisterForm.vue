@@ -71,6 +71,7 @@ const handleSubmit = async (): Promise<void> => {
       title: 'Account created',
       durationMs: 4500,
     })
+    await router.push('/auth')
 
     password.value = ''
     confirmPassword.value = ''

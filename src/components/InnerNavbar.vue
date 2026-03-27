@@ -25,7 +25,15 @@ const router = useRouter()
 const { showAlert, showSuccess } = useAlertContext()
 const isLoggingOut = ref(false)
 
-const userEmail = computed(() => authStore.user?.email?.trim() || 'Guest')
+const userName = computed(() => {
+  const rawUsername = authStore.user?.user_metadata?.username
+
+  return typeof rawUsername === 'string' && rawUsername.trim().length > 0
+    ? rawUsername.trim()
+    : 'Guest'
+})
+
+const userEmail = computed(() => authStore.user?.email?.trim() || '')
 
 const avatarUrl = computed(() => {
   const rawAvatarUrl = authStore.user?.user_metadata?.avatar_url
@@ -36,9 +44,9 @@ const avatarUrl = computed(() => {
 })
 
 const userInitials = computed(() => {
-  const localPart = userEmail.value.split('@')[0]?.replace(/[^a-zA-Z0-9]/g, '') || ''
+  const condensedName = userName.value.replace(/[^a-zA-Z0-9]/g, '')
 
-  return localPart.slice(0, 2).toUpperCase() || 'BN'
+  return condensedName.slice(0, 2).toUpperCase() || 'BN'
 })
 
 const handleLogout = async (): Promise<void> => {
@@ -101,14 +109,19 @@ const handleLogout = async (): Promise<void> => {
               aria-label="Open user menu"
             >
               <Avatar class="h-9 w-9">
-                <AvatarImage v-if="avatarUrl" :src="avatarUrl" :alt="`${userEmail} avatar`" />
+                <AvatarImage v-if="avatarUrl" :src="avatarUrl" :alt="`${userName} avatar`" />
                 <AvatarFallback>{{ userInitials }}</AvatarFallback>
               </Avatar>
-              <span class="max-w-[180px] truncate text-sm font-medium">{{ userEmail }}</span>
+              <span class="max-w-[180px] truncate text-sm font-medium">{{ userName }}</span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" class="w-56">
-            <DropdownMenuLabel class="truncate">{{ userEmail }}</DropdownMenuLabel>
+            <DropdownMenuLabel
+              v-if="userEmail"
+              class="truncate text-xs font-normal text-muted-foreground"
+            >
+              {{ userEmail }}
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               :disabled="!authStore.isLoggedIn || isLoggingOut"
