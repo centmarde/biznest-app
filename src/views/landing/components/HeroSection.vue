@@ -8,7 +8,7 @@ import Button from '@/components/ui/button/Button.vue'
 import TypographyH1 from '@/components/typography/TypographyH1.vue'
 import TypographyMuted from '@/components/typography/TypographyMuted.vue'
 import TypographyList from '@/components/typography/TypographyList.vue'
-import { partners } from '../constants/partners'
+import { partners } from '../utils/partners'
 </script>
 
 <template>

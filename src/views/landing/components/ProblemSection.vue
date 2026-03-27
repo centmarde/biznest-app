@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { oldWayPoints, bizNestWayPoints } from '../constants/problem'
+import { oldWayPoints, bizNestWayPoints } from '../utils/problem'
 
 defineOptions({
   name: 'ProblemSection',
