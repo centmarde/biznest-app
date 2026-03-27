@@ -25,7 +25,7 @@ import logoImage from '@/assets/images/logo.png'
             class="h-full w-full object-contain dark:brightness-90"
           />
         </span>
-        <span class="text-2xl">BizNest</span>
+        <span class="text-xl">BizNest</span>
       </RouterLink>
 
       <div class="flex items-center gap-4">
@@ -37,7 +37,7 @@ import logoImage from '@/assets/images/logo.png'
         </Button>
         <ModeToggle />
         <Button as-child size="sm">
-          <RouterLink to="/login">Get Started</RouterLink>
+          <RouterLink to="/auth">Get Started</RouterLink>
         </Button>
       </div>
     </div>

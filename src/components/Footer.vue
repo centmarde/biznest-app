@@ -3,6 +3,7 @@ import type { Component } from 'vue'
 import { Clock3, Mail, MapPin } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import logoImage from '@/assets/images/logo.png'
+import { TypographyLarge, TypographyMuted, TypographySmall } from '@/components/typography'
 import {
   footerBrandDescription,
   footerBrandName,
@@ -37,31 +38,35 @@ const resolveContactIcon = (icon: FooterContactIcon): Component => contactIconMa
             >
               <img :src="logoImage" alt="BizNest logo" class="h-full w-full object-contain" />
             </span>
-            <span class="text-xl font-semibold tracking-wide">{{ footerBrandName }}</span>
+            <TypographyLarge as="span" class="text-xl tracking-wide">
+              {{ footerBrandName }}
+            </TypographyLarge>
           </RouterLink>
-          <p class="max-w-sm text-sm leading-relaxed text-muted-foreground">
+          <TypographyMuted class="max-w-sm leading-relaxed text-muted-foreground">
             {{ footerBrandDescription }}
-          </p>
+          </TypographyMuted>
         </div>
 
         <div>
-          <h3 class="text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
+          <TypographySmall as="h3" class="uppercase tracking-[0.12em] text-foreground">
             Quick Links
-          </h3>
+          </TypographySmall>
           <ul class="mt-4 space-y-2 text-sm text-muted-foreground">
             <li v-for="link in footerQuickLinks" :key="link.label">
               <RouterLink
                 :to="link.to"
                 class="transition-colors duration-200 hover:text-foreground"
               >
-                {{ link.label }}
+                <TypographyMuted as="span" class="text-inherit">{{ link.label }}</TypographyMuted>
               </RouterLink>
             </li>
           </ul>
         </div>
 
         <div>
-          <h3 class="text-sm font-semibold uppercase tracking-[0.12em] text-foreground">Contact</h3>
+          <TypographySmall as="h3" class="uppercase tracking-[0.12em] text-foreground"
+            >Contact</TypographySmall
+          >
           <ul class="mt-4 space-y-3 text-sm text-muted-foreground">
             <li v-for="item in footerContactItems" :key="item.label" class="flex items-start gap-2">
               <component
@@ -74,9 +79,11 @@ const resolveContactIcon = (icon: FooterContactIcon): Component => contactIconMa
                 :href="item.href"
                 class="transition-colors duration-200 hover:text-foreground"
               >
-                {{ item.label }}
+                <TypographyMuted as="span" class="text-inherit">{{ item.label }}</TypographyMuted>
               </a>
-              <span v-else>{{ item.label }}</span>
+              <TypographyMuted v-else as="span" class="text-inherit">{{
+                item.label
+              }}</TypographyMuted>
             </li>
           </ul>
         </div>
@@ -85,7 +92,9 @@ const resolveContactIcon = (icon: FooterContactIcon): Component => contactIconMa
       <div
         class="mt-8 flex flex-col gap-3 border-t border-border/70 pt-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
       >
-        <p>Copyright {{ footerCurrentYear }} {{ footerBrandName }}. All rights reserved.</p>
+        <TypographyMuted>
+          Copyright {{ footerCurrentYear }} {{ footerBrandName }}. All rights reserved.
+        </TypographyMuted>
         <div class="flex flex-wrap items-center gap-4">
           <a
             v-for="link in footerLegalLinks"
@@ -93,7 +102,7 @@ const resolveContactIcon = (icon: FooterContactIcon): Component => contactIconMa
             :href="link.href"
             class="transition-colors duration-200 hover:text-foreground"
           >
-            {{ link.label }}
+            <TypographyMuted as="span" class="text-inherit">{{ link.label }}</TypographyMuted>
           </a>
         </div>
       </div>
