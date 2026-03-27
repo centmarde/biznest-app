@@ -36,6 +36,11 @@ export const signUpWithEmail = async (payload: RegisterPayload): Promise<AuthRes
   const { data, error } = await supabase.auth.signUp({
     email: payload.email.trim(),
     password: payload.password,
+    options: {
+      data: {
+        username: payload.username.trim(),
+      },
+    },
   })
 
   if (error) {

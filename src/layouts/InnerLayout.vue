@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import InnerNavbar from '@/components/InnerNavbar.vue'
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-6xl px-4 py-6">
-    <RouterView />
-  </main>
+  <div class="flex min-h-screen flex-col bg-far text-foreground">
+    <InnerNavbar />
+    <main class="flex-1">
+      <RouterView />
+    </main>
+    <Footer />
+  </div>
 </template>
