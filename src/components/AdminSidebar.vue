@@ -11,6 +11,7 @@ import {
 } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { TypographyLarge, TypographyMuted, TypographySmall } from '@/components/typography'
 import type { AdminSidebarIconName } from '@/types/admin-sidebar.types'
 import { managementAdminNavItems, primaryAdminNavItems } from '@/utils/admin-sidebar-nav'
 
@@ -34,56 +35,66 @@ const isActive = (itemPath: string): boolean => {
 
   return route.path.startsWith(itemPath)
 }
+
+const getNavItemClass = (itemPath: string): string => {
+  if (isActive(itemPath)) {
+    return 'bg-foreground/14 text-foreground ring-1 ring-foreground/25'
+  }
+
+  return 'text-foreground/75 hover:bg-foreground/8 hover:text-foreground'
+}
 </script>
 
 <template>
-  <aside class="hidden w-72 shrink-0 border-r bg-card md:block">
+  <aside class="hidden w-72 shrink-0 border-r bg-card/70 md:block">
     <div class="flex h-full flex-col">
       <div class="border-b px-6 py-5">
-        <h2 class="text-base font-semibold tracking-wide">Admin Panel</h2>
-        <p class="mt-1 text-xs text-muted-foreground">Manage your operations</p>
+        <TypographyLarge as="h2" class="text-base tracking-wide">Admin Panel</TypographyLarge>
+        <TypographyMuted as="p" class="mt-1 text-xs">Manage your operations</TypographyMuted>
       </div>
 
       <nav class="flex-1 space-y-6 px-4 py-5">
         <section>
-          <p class="px-2 pb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+          <TypographySmall
+            as="p"
+            class="px-2 pb-2 text-xs tracking-wider text-foreground/60 uppercase"
+          >
             Overview
-          </p>
+          </TypographySmall>
           <ul class="space-y-1">
             <li v-for="item in primaryAdminNavItems" :key="item.to">
               <RouterLink
                 :to="item.to"
-                class="hover:bg-accent hover:text-accent-foreground flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
-                :class="
-                  isActive(item.to)
-                    ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
-                    : 'text-muted-foreground'
-                "
+                class="focus-visible:ring-ring flex items-center gap-3 rounded-md px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+                :class="getNavItemClass(item.to)"
               >
-                <component :is="iconMap[item.icon]" class="h-4 w-4" />
-                <span>{{ item.label }}</span>
+                <component :is="iconMap[item.icon]" class="h-4 w-4 shrink-0" />
+                <TypographySmall as="span" class="text-sm text-inherit">{{
+                  item.label
+                }}</TypographySmall>
               </RouterLink>
             </li>
           </ul>
         </section>
 
         <section>
-          <p class="px-2 pb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+          <TypographySmall
+            as="p"
+            class="px-2 pb-2 text-xs tracking-wider text-foreground/60 uppercase"
+          >
             Administration
-          </p>
+          </TypographySmall>
           <ul class="space-y-1">
             <li v-for="item in managementAdminNavItems" :key="item.to">
               <RouterLink
                 :to="item.to"
-                class="hover:bg-accent hover:text-accent-foreground flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
-                :class="
-                  isActive(item.to)
-                    ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
-                    : 'text-muted-foreground'
-                "
+                class="focus-visible:ring-ring flex items-center gap-3 rounded-md px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+                :class="getNavItemClass(item.to)"
               >
-                <component :is="iconMap[item.icon]" class="h-4 w-4" />
-                <span>{{ item.label }}</span>
+                <component :is="iconMap[item.icon]" class="h-4 w-4 shrink-0" />
+                <TypographySmall as="span" class="text-sm text-inherit">{{
+                  item.label
+                }}</TypographySmall>
               </RouterLink>
             </li>
           </ul>
