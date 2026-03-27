@@ -12,3 +12,29 @@ export interface Tab {
   content: string
   tableData?: TableRow[]
 }
+
+export interface ReportHeaderProps {
+  loading?: boolean;
+  error?: string | null;
+}
+
+export interface ReportsTableProps {
+  tableData?: TableRow[];
+  content?: string;
+}
+
+export interface TabAndExportButtonsProps {
+  tabs: Tab[];
+  value: number;
+  canExport: boolean;
+}
+
+export interface ReportProps {
+  loading?: boolean;
+  error?: string | null;
+  tableData?: TableRow[];
+  content?: string;
+  tabs: Tab[];
+  value: number;
+  canExport: boolean;
+}

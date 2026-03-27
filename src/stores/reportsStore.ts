@@ -62,7 +62,7 @@ export const useReportsStore = defineStore('reports', () => {
           const tableData: TableRow[] = groupedData[label]!
           const newTab: Tab = {
             label,
-            content: `Reports for ${label}`,
+            content: `No Reports Found for "${label}"`,
             tableData,
           }
           tabs.value.push(newTab)
