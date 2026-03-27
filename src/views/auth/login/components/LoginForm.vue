@@ -49,7 +49,7 @@ const handleSubmit = async (): Promise<void> => {
       title: 'Login successful',
     })
 
-    await router.push('/')
+    await router.push('/admin')
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Unable to sign in right now.'
   } finally {
