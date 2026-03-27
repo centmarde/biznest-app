@@ -22,11 +22,6 @@ const router = createRouter({
           component: LandingView,
           meta: { requiresGuest: true },
         },
-        {
-          path: 'reports',
-          name: 'reports',
-          component: ReportsView,
-        },
       ],
     },
     {
@@ -55,6 +50,12 @@ const router = createRouter({
           path: '',
           name: 'test',
           component: TestView,
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'reports',
+          name: 'reports',
+          component: ReportsView,
           meta: { requiresAuth: true },
         },
       ],

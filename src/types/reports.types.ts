@@ -1,4 +1,5 @@
 export interface TableRow {
+  label?: string
   businessOwner?: string
   contactNumber?: string
   businessLocation?: string
