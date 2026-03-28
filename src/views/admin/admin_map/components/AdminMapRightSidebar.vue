@@ -37,10 +37,21 @@ const emit = defineEmits<{
 
 const showAddLayerModal = ref(false)
 const showLayerList = ref(false)
-const showMappedZoneList = ref(false)
 const showEditLayerModal = ref(false)
 const deletingLayerId = ref<string | null>(null)
 const editingLayerId = ref<string | null>(null)
+const expandedLayerMappedZones = ref<Record<string, boolean>>({})
+
+const mappedZonesByLayerId = computed<Record<string, MappedZone[]>>(() => {
+  return props.mappedZones.reduce<Record<string, MappedZone[]>>((accumulator, zone) => {
+    if (!accumulator[zone.zoning_layer_id]) {
+      accumulator[zone.zoning_layer_id] = []
+    }
+
+    accumulator[zone.zoning_layer_id]?.push(zone)
+    return accumulator
+  }, {})
+})
 
 const addLayerInitialValue = computed<UpdateZoningLayerInput>(() => ({
   title: '',
@@ -138,6 +149,13 @@ function toggleLayerVisibility(layer: ZoningLayer): void {
     isActive: !layer.is_active,
   })
 }
+
+function toggleLayerMappedZones(layerId: string): void {
+  expandedLayerMappedZones.value = {
+    ...expandedLayerMappedZones.value,
+    [layerId]: !expandedLayerMappedZones.value[layerId],
+  }
+}
 </script>
 
 <template>
@@ -220,49 +238,47 @@ function toggleLayerVisibility(layer: ZoningLayer): void {
                 <EyeOff v-else class="h-4 w-4" />
               </Button>
             </div>
+
+            <button
+              type="button"
+              class="mt-2 flex w-full items-center gap-2 rounded-md border px-2 py-1 text-left"
+              @click="toggleLayerMappedZones(layer.id)"
+            >
+              <p class="text-xs font-medium">Mapped Zones</p>
+              <Badge variant="secondary" class="ml-auto">
+                {{ mappedZonesByLayerId[layer.id]?.length ?? 0 }}
+              </Badge>
+              <ChevronRight
+                class="h-3.5 w-3.5 transition-transform"
+                :class="expandedLayerMappedZones[layer.id] ? 'rotate-90' : ''"
+              />
+            </button>
+
+            <div v-if="expandedLayerMappedZones[layer.id]" class="mt-2 space-y-1">
+              <div
+                v-for="zone in mappedZonesByLayerId[layer.id] ?? []"
+                :key="zone.id"
+                class="rounded-md border p-2"
+              >
+                <p class="truncate text-xs font-medium">{{ zone.name }}</p>
+                <p
+                  v-if="zone.description"
+                  class="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground"
+                >
+                  {{ zone.description }}
+                </p>
+              </div>
+              <p
+                v-if="(mappedZonesByLayerId[layer.id]?.length ?? 0) === 0"
+                class="text-[11px] text-muted-foreground"
+              >
+                No mapped zones under this layer yet.
+              </p>
+            </div>
           </div>
           <p v-if="layers.length === 0" class="text-xs text-muted-foreground">
             No zoning layers yet. Click Add Zoning Layer.
           </p>
-          </div>
-        </section>
-
-        <Separator />
-
-        <section class="space-y-2">
-          <button
-            type="button"
-            class="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left"
-            @click="showMappedZoneList = !showMappedZoneList"
-          >
-            <p class="text-sm font-semibold">Mapped Zones</p>
-            <Badge variant="secondary" class="ml-auto">{{ mappedZones.length }}</Badge>
-            <ChevronRight
-              class="h-4 w-4 transition-transform"
-              :class="showMappedZoneList ? 'rotate-90' : ''"
-            />
-          </button>
-
-
-
-          <div v-if="showMappedZoneList" class="space-y-2">
-            <div
-              v-for="zone in mappedZones"
-              :key="zone.id"
-              class="rounded-lg border p-2"
-            >
-              <div class="flex items-center gap-2">
-                <span
-                  class="h-3 w-3 rounded-sm border"
-                  :style="{ backgroundColor: zone.zoning_color }"
-                />
-                <p class="flex-1 truncate text-sm font-medium">{{ zone.name }}</p>
-              </div>
-              <p class="mt-1 text-xs text-muted-foreground">{{ zone.zoning_title }}</p>
-            </div>
-            <p v-if="mappedZones.length === 0" class="text-xs text-muted-foreground">
-              No mapped zones yet. Use Draw Zone to create one.
-            </p>
           </div>
         </section>
       </CardContent>
