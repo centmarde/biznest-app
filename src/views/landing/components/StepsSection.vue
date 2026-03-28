@@ -6,12 +6,8 @@ import TypographyLarge from '@/components/typography/TypographyLarge.vue'
 import TypographyMuted from '@/components/typography/TypographyMuted.vue'
 import TypographySmall from '@/components/typography/TypographySmall.vue'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import {
-  stepGuideItems,
-  stepVisualMap,
-  type StepGuideItem,
-  type StepIcon,
-} from '../constants/steps'
+import type { StepGuideItem, StepIcon } from '../types/steps.types'
+import { stepGuideItems, stepVisualMap } from '../utils/steps'
 
 defineOptions({
   name: 'StepsSection',

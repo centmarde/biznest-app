@@ -58,6 +58,6 @@ When generating or modifying code, strictly adhere to the following directory re
 2.  **Composition API:** Exclusively use `<script setup lang="ts">` for Vue components. Do not use the Options API.
 3.  **Imports:** Prefer absolute imports starting with `@/` (mapping to `src/`) over relative paths (`../../`) for clarity.
 4.  **Naming Conventions:**
-    - Vue Components: PascalCase (e.g., `UserProfile.vue`).
+    - Vue Components: PascalCase (e.g., `UserProfile.vue`), use Shadcn components if available and if not please install it.
     - Composables: camelCase with `use` prefix (e.g., `useTheme.ts`).
     - TypeScript files (services, utils, types): kebab-case or camelCase (e.g., `user.service.ts` or `userService.ts`). Maintain consistency.
