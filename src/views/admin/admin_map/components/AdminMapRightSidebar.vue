@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ChevronRight, Eye, Pencil, Plus, Trash2, X } from 'lucide-vue-next'
+import { ChevronRight, Eye, EyeOff, Pencil, Plus, Trash2, X } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,6 +32,7 @@ const emit = defineEmits<{
   (e: 'submit-layer', payload: CreateZoningLayerInput): void
   (e: 'update-layer', payload: { layerId: string; input: UpdateZoningLayerInput }): void
   (e: 'delete-layer', layerId: string): void
+  (e: 'toggle-layer-visibility', payload: { layerId: string; isActive: boolean }): void
 }>()
 
 const showAddLayerModal = ref(false)
@@ -126,6 +127,17 @@ function confirmDeleteLayer(): void {
   emit('delete-layer', deletingLayerId.value)
   cancelDeleteDialog()
 }
+
+function toggleLayerVisibility(layer: ZoningLayer): void {
+  if (props.isSubmitting) {
+    return
+  }
+
+  emit('toggle-layer-visibility', {
+    layerId: layer.id,
+    isActive: !layer.is_active,
+  })
+}
 </script>
 
 <template>
@@ -197,8 +209,15 @@ function confirmDeleteLayer(): void {
               >
                 <Trash2 class="h-4 w-4 text-destructive" />
               </Button>
-              <Button variant="ghost" size="icon-sm" title="Toggle visibility (next step)">
-                <Eye class="h-4 w-4" />
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                :title="layer.is_active ? 'Hide layer zones' : 'Show layer zones'"
+                :disabled="isSubmitting"
+                @click="toggleLayerVisibility(layer)"
+              >
+                <Eye v-if="layer.is_active" class="h-4 w-4" />
+                <EyeOff v-else class="h-4 w-4" />
               </Button>
             </div>
           </div>

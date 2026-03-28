@@ -169,6 +169,26 @@ export async function deleteZoningLayer(layerId: string): Promise<void> {
   }
 }
 
+export async function setZoningLayerActive(
+  layerId: string,
+  isActive: boolean,
+): Promise<ZoningLayer> {
+  const supabase = getSupabaseClient()
+
+  const { data, error } = await supabase
+    .from(ZONING_LAYERS_TABLE)
+    .update({ is_active: isActive })
+    .eq('id', layerId)
+    .select('id, title, color, description, is_active, created_at, updated_at')
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data as ZoningLayer
+}
+
 export async function listMyMappedZones(): Promise<MappedZone[]> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase.rpc('get_my_mapped_zones')

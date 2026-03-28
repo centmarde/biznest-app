@@ -1,6 +1,6 @@
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Layers, PenTool } from 'lucide-vue-next'
 import Map from '@/components/map/Map.vue'
 import { useBarangayBorders } from '@/composables/map/useBarangayBorders'
@@ -14,6 +14,7 @@ import {
   deleteZoningLayer,
   listMyMappedZones,
   listMyZoningLayers,
+  setZoningLayerActive,
   updateZoningLayer,
 } from '@/services/zoning/zoning.service'
 import type {
@@ -36,6 +37,18 @@ const showMappedZoneModal = ref(false)
 const zoningLayers = ref<ZoningLayer[]>([])
 const mappedZones = ref<MappedZone[]>([])
 const zoningError = ref('')
+
+const visibleMappedZones = computed(() => {
+  const activeLayerIds = new Set(
+    zoningLayers.value
+      .filter((layer) => layer.is_active)
+      .map((layer) => layer.id),
+  )
+
+  return mappedZones.value.filter(
+    (zone) => zone.is_visible && activeLayerIds.has(zone.zoning_layer_id),
+  )
+})
 
 const { barangayBorders, isLoading, errorMessage, loadBarangayBorders } = useBarangayBorders()
 
@@ -116,6 +129,29 @@ async function handleDeleteLayer(layerId: string): Promise<void> {
     zoningLayers.value = zoningLayers.value.filter((layer) => layer.id !== layerId)
   } catch (error) {
     zoningError.value = error instanceof Error ? error.message : 'Failed to delete zoning layer.'
+  } finally {
+    isSavingLayer.value = false
+  }
+}
+
+async function handleToggleLayerVisibility(payload: {
+  layerId: string
+  isActive: boolean
+}): Promise<void> {
+  isSavingLayer.value = true
+  zoningError.value = ''
+
+  try {
+    const updatedLayer = await setZoningLayerActive(payload.layerId, payload.isActive)
+    zoningLayers.value = zoningLayers.value.map((layer) => {
+      if (layer.id !== updatedLayer.id) {
+        return layer
+      }
+
+      return updatedLayer
+    })
+  } catch (error) {
+    zoningError.value = error instanceof Error ? error.message : 'Failed to toggle layer visibility.'
   } finally {
     isSavingLayer.value = false
   }
@@ -209,7 +245,7 @@ async function handleSaveMappedZone(
         :provider="provider"
         :show-barangay-borders="showBarangayBorders"
         :barangay-borders="barangayBorders"
-        :mapped-zones="mappedZones"
+        :mapped-zones="visibleMappedZones"
         :draw-points="drawPoints"
         :is-draw-mode="isDrawMode"
         @map-click="handleMapClick"
@@ -233,6 +269,7 @@ async function handleSaveMappedZone(
         @submit-layer="handleCreateLayer"
         @update-layer="handleUpdateLayer"
         @delete-layer="handleDeleteLayer"
+        @toggle-layer-visibility="handleToggleLayerVisibility"
       />
 
       <div
