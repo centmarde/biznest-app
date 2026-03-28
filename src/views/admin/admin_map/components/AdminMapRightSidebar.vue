@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
-import { ChevronRight, Eye, Plus, X } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { ChevronRight, Eye, Pencil, Plus, Trash2, X } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import type { CreateZoningLayerInput, ZoningLayer } from '@/types/zoning.types'
+import ZoningLayerDeleteDialog from '@/views/admin/admin_map/components/ZoningLayerDeleteDialog.vue'
+import ZoningLayerFormModal from '@/views/admin/admin_map/components/ZoningLayerFormModal.vue'
+import type {
+  CreateZoningLayerInput,
+  UpdateZoningLayerInput,
+  ZoningLayer,
+} from '@/types/zoning.types'
 
 const props = withDefaults(
   defineProps<{
@@ -22,18 +27,39 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'submit-layer', payload: CreateZoningLayerInput): void
+  (e: 'update-layer', payload: { layerId: string; input: UpdateZoningLayerInput }): void
+  (e: 'delete-layer', layerId: string): void
 }>()
 
 const showAddLayerModal = ref(false)
 const showLayerList = ref(false)
+const showEditLayerModal = ref(false)
+const deletingLayerId = ref<string | null>(null)
+const editingLayerId = ref<string | null>(null)
 
-const form = reactive<CreateZoningLayerInput>({
+const addLayerInitialValue = computed<UpdateZoningLayerInput>(() => ({
   title: '',
   color: '#65a30d',
   description: '',
-})
+}))
 
-const canSubmit = computed(() => form.title.trim().length > 0 && !props.isSubmitting)
+const editLayerInitialValue = computed<UpdateZoningLayerInput>(() => {
+  const activeLayer = props.layers.find((layer) => layer.id === editingLayerId.value)
+
+  if (!activeLayer) {
+    return {
+      title: '',
+      color: '#65a30d',
+      description: '',
+    }
+  }
+
+  return {
+    title: activeLayer.title,
+    color: activeLayer.color,
+    description: activeLayer.description ?? '',
+  }
+})
 
 function openAddLayerModal(): void {
   showAddLayerModal.value = true
@@ -43,21 +69,58 @@ function closeAddLayerModal(): void {
   showAddLayerModal.value = false
 }
 
-function submitLayer(): void {
-  if (!canSubmit.value) {
+function openEditLayerModal(layer: ZoningLayer): void {
+  editingLayerId.value = layer.id
+  showEditLayerModal.value = true
+}
+
+function closeEditLayerModal(): void {
+  showEditLayerModal.value = false
+  editingLayerId.value = null
+}
+
+function submitLayer(input: UpdateZoningLayerInput): void {
+  emit('submit-layer', {
+    title: input.title,
+    color: input.color,
+    description: input.description,
+  })
+
+  closeAddLayerModal()
+}
+
+function submitLayerUpdate(input: UpdateZoningLayerInput): void {
+  if (!editingLayerId.value || props.isSubmitting) {
     return
   }
 
-  emit('submit-layer', {
-    title: form.title.trim(),
-    color: form.color,
-    description: form.description.trim(),
+  emit('update-layer', {
+    layerId: editingLayerId.value,
+    input: {
+      title: input.title,
+      color: input.color,
+      description: input.description,
+    },
   })
 
-  form.title = ''
-  form.description = ''
-  form.color = '#65a30d'
-  closeAddLayerModal()
+  closeEditLayerModal()
+}
+
+function openDeleteDialog(layerId: string): void {
+  deletingLayerId.value = layerId
+}
+
+function cancelDeleteDialog(): void {
+  deletingLayerId.value = null
+}
+
+function confirmDeleteLayer(): void {
+  if (!deletingLayerId.value || props.isSubmitting) {
+    return
+  }
+
+  emit('delete-layer', deletingLayerId.value)
+  cancelDeleteDialog()
 }
 </script>
 
@@ -108,12 +171,30 @@ function submitLayer(): void {
             :key="layer.id"
             class="rounded-lg border p-2"
           >
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1">
               <span
                 class="h-3 w-3 rounded-sm border"
                 :style="{ backgroundColor: layer.color }"
               />
               <p class="flex-1 truncate text-sm font-medium">{{ layer.title }}</p>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title="Update layer"
+                :disabled="isSubmitting"
+                @click="openEditLayerModal(layer)"
+              >
+                <Pencil class="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title="Delete layer"
+                :disabled="isSubmitting"
+                @click="openDeleteDialog(layer.id)"
+              >
+                <Trash2 class="h-4 w-4 text-destructive" />
+              </Button>
               <Button variant="ghost" size="icon-sm" title="Toggle visibility (next step)">
                 <Eye class="h-4 w-4" />
               </Button>
@@ -127,41 +208,29 @@ function submitLayer(): void {
       </CardContent>
     </Card>
 
-    <div
-      v-if="showAddLayerModal"
-      class="fixed inset-0 z-10000 flex items-center justify-center bg-black/40 p-4"
-    >
-      <Card class="w-full max-w-md py-0">
-        <CardHeader class="border-b py-4">
-          <CardTitle class="text-base">Add Zoning Layer</CardTitle>
-        </CardHeader>
-        <CardContent class="space-y-3 p-4">
-          <div class="space-y-1">
-            <label class="text-xs font-medium">Zoning Title</label>
-            <Input v-model="form.title" placeholder="e.g. Residential" />
-          </div>
+    <ZoningLayerFormModal
+      :open="showAddLayerModal"
+      mode="add"
+      :is-submitting="isSubmitting"
+      :initial-value="addLayerInitialValue"
+      @close="closeAddLayerModal"
+      @submit="submitLayer"
+    />
 
-          <div class="space-y-1">
-            <label class="text-xs font-medium">Color</label>
-            <Input v-model="form.color" type="color" class="h-10 w-14 p-1" />
-          </div>
+    <ZoningLayerFormModal
+      :open="showEditLayerModal"
+      mode="edit"
+      :is-submitting="isSubmitting"
+      :initial-value="editLayerInitialValue"
+      @close="closeEditLayerModal"
+      @submit="submitLayerUpdate"
+    />
 
-          <div class="space-y-1">
-            <label class="text-xs font-medium">Description</label>
-            <textarea
-              v-model="form.description"
-              rows="3"
-              class="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-[3px]"
-              placeholder="Short layer description"
-            />
-          </div>
-
-          <div class="flex justify-end gap-2">
-            <Button variant="outline" @click="closeAddLayerModal">Cancel</Button>
-            <Button :disabled="!canSubmit" @click="submitLayer">Save Layer</Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <ZoningLayerDeleteDialog
+      :open="Boolean(deletingLayerId)"
+      :is-submitting="isSubmitting"
+      @cancel="cancelDeleteDialog"
+      @confirm="confirmDeleteLayer"
+    />
   </aside>
 </template>

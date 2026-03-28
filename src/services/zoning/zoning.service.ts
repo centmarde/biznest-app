@@ -1,5 +1,9 @@
 import { getSupabaseClient } from '@/services/supabase.client'
-import type { CreateZoningLayerInput, ZoningLayer } from '@/types/zoning.types'
+import type {
+  CreateZoningLayerInput,
+  UpdateZoningLayerInput,
+  ZoningLayer,
+} from '@/types/zoning.types'
 
 const ZONING_LAYERS_TABLE = 'zoning_layers'
 
@@ -50,4 +54,41 @@ export async function createZoningLayer(input: CreateZoningLayerInput): Promise<
   }
 
   return data as ZoningLayer
+}
+
+export async function updateZoningLayer(
+  layerId: string,
+  input: UpdateZoningLayerInput,
+): Promise<ZoningLayer> {
+  const supabase = getSupabaseClient()
+  const payload = {
+    title: input.title.trim(),
+    color: input.color,
+    description: input.description.trim() || null,
+  }
+
+  const { data, error } = await supabase
+    .from(ZONING_LAYERS_TABLE)
+    .update(payload)
+    .eq('id', layerId)
+    .select('id, title, color, description, is_active, created_at, updated_at')
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data as ZoningLayer
+}
+
+export async function deleteZoningLayer(layerId: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  const { error } = await supabase
+    .from(ZONING_LAYERS_TABLE)
+    .delete()
+    .eq('id', layerId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
 }

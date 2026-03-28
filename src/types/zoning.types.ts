@@ -13,3 +13,9 @@ export interface CreateZoningLayerInput {
   color: string
   description: string
 }
+
+export interface UpdateZoningLayerInput {
+  title: string
+  color: string
+  description: string
+}

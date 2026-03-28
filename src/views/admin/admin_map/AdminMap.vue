@@ -7,8 +7,17 @@ import { useBarangayBorders } from '@/composables/map/useBarangayBorders'
 import AdminMapRightSidebar from '@/views/admin/admin_map/components/AdminMapRightSidebar.vue'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { createZoningLayer, listMyZoningLayers } from '@/services/zoning/zoning.service'
-import type { CreateZoningLayerInput, ZoningLayer } from '@/types/zoning.types'
+import {
+  createZoningLayer,
+  deleteZoningLayer,
+  listMyZoningLayers,
+  updateZoningLayer,
+} from '@/services/zoning/zoning.service'
+import type {
+  CreateZoningLayerInput,
+  UpdateZoningLayerInput,
+  ZoningLayer,
+} from '@/types/zoning.types'
 
 const provider = ref<'google' | 'leaflet'>('leaflet')
 const showBarangayBorders = ref(false)
@@ -49,6 +58,43 @@ async function handleCreateLayer(payload: CreateZoningLayerInput): Promise<void>
     zoningLayers.value = [createdLayer, ...zoningLayers.value]
   } catch (error) {
     zoningError.value = error instanceof Error ? error.message : 'Failed to save zoning layer.'
+  } finally {
+    isSavingLayer.value = false
+  }
+}
+
+async function handleUpdateLayer(payload: {
+  layerId: string
+  input: UpdateZoningLayerInput
+}): Promise<void> {
+  isSavingLayer.value = true
+  zoningError.value = ''
+
+  try {
+    const updatedLayer = await updateZoningLayer(payload.layerId, payload.input)
+    zoningLayers.value = zoningLayers.value.map((layer) => {
+      if (layer.id !== updatedLayer.id) {
+        return layer
+      }
+
+      return updatedLayer
+    })
+  } catch (error) {
+    zoningError.value = error instanceof Error ? error.message : 'Failed to update zoning layer.'
+  } finally {
+    isSavingLayer.value = false
+  }
+}
+
+async function handleDeleteLayer(layerId: string): Promise<void> {
+  isSavingLayer.value = true
+  zoningError.value = ''
+
+  try {
+    await deleteZoningLayer(layerId)
+    zoningLayers.value = zoningLayers.value.filter((layer) => layer.id !== layerId)
+  } catch (error) {
+    zoningError.value = error instanceof Error ? error.message : 'Failed to delete zoning layer.'
   } finally {
     isSavingLayer.value = false
   }
@@ -99,6 +145,8 @@ async function handleCreateLayer(payload: CreateZoningLayerInput): Promise<void>
         :is-submitting="isSavingLayer"
         @close="isSidebarOpen = false"
         @submit-layer="handleCreateLayer"
+        @update-layer="handleUpdateLayer"
+        @delete-layer="handleDeleteLayer"
       />
 
       <div
