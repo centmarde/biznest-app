@@ -37,3 +37,9 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+#environment variables
+.env
+
+# Copilot local instruction variant
+.github/copilot-instruction-2.md
