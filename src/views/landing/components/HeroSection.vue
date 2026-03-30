@@ -12,7 +12,7 @@ import { partners } from '../utils/partners'
 </script>
 
 <template>
-  <section class="relative w-full overflow-hidden py-20 text-white md:py-28">
+  <section class="relative w-full overflow-hidden pt-14 pb-10 text-white md:pt-20 md:pb-14">
     <div
       class="mx-auto flex w-full max-w-screen-xl flex-col items-center gap-8 px-6 md:flex-row md:gap-10 md:px-10"
     >
@@ -70,7 +70,7 @@ import { partners } from '../utils/partners'
         </div>
       </div>
     </div>
-    <div class="mt-16 w-full border-t border-white/10 px-6 pt-10 md:px-10">
+    <div class="mt-10 w-full border-t border-white/10 px-6 pt-8 md:mt-12 md:px-10 md:pt-8">
       <div
         class="mx-auto flex w-full max-w-screen-xl flex-col items-center justify-center gap-6 md:flex-row md:gap-12"
       >
