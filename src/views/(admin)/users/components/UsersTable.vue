@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   Pagination,
   PaginationContent,
@@ -69,6 +69,14 @@ const setPage = (page: number): void => {
 
 const previousPage = (): void => setPage(currentPage.value - 1)
 const nextPage = (): void => setPage(currentPage.value + 1)
+
+watch(
+  () => props.rows,
+  () => {
+    currentPage.value = 1
+  },
+  { deep: true },
+)
 </script>
 
 <template>
