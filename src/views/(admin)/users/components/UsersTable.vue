@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   Pagination,
   PaginationContent,
@@ -19,19 +19,27 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
-import { USER_ROWS, USER_STATUS_CLASS } from '@/views/(admin)/users/utils/users-table.utils'
+import { USER_STATUS_CLASS } from '@/views/(admin)/users/utils/users-table.utils'
 import { Pencil, Trash2 } from 'lucide-vue-next'
 
-const rows: UserRow[] = USER_ROWS
+const props = withDefaults(
+  defineProps<{
+    rows?: UserRow[]
+  }>(),
+  {
+    rows: () => [],
+  },
+)
 
 const pageSize = 5
 const currentPage = ref(1)
 
-const totalPages = computed(() => Math.max(1, Math.ceil(rows.length / pageSize)))
+const totalPages = computed(() => Math.max(1, Math.ceil(props.rows.length / pageSize)))
+const hasRows = computed(() => props.rows.length > 0)
 
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * pageSize
-  return rows.slice(start, start + pageSize)
+  return props.rows.slice(start, start + pageSize)
 })
 
 type VisiblePageItem = number | 'ellipsis-left' | 'ellipsis-right'
@@ -61,6 +69,14 @@ const setPage = (page: number): void => {
 
 const previousPage = (): void => setPage(currentPage.value - 1)
 const nextPage = (): void => setPage(currentPage.value + 1)
+
+watch(
+  () => props.rows,
+  () => {
+    currentPage.value = 1
+  },
+  { deep: true },
+)
 </script>
 
 <template>
@@ -107,11 +123,17 @@ const nextPage = (): void => setPage(currentPage.value + 1)
               </div>
             </TableCell>
           </TableRow>
+
+          <TableRow v-if="!hasRows">
+            <TableCell colspan="6" class="px-4 py-10 text-center text-muted-foreground">
+              No users found.
+            </TableCell>
+          </TableRow>
         </TableBody>
       </Table>
     </div>
 
-    <Pagination class="justify-end">
+    <Pagination v-if="hasRows" class="justify-end">
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
