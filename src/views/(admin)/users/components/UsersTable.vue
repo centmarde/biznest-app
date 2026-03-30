@@ -75,7 +75,6 @@ watch(
   () => {
     currentPage.value = 1
   },
-  { deep: true },
 )
 </script>
 
