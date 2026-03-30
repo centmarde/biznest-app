@@ -12,7 +12,7 @@ import { partners } from '../utils/partners'
 </script>
 
 <template>
-  <section class="relative w-full overflow-hidden pt-14 pb-10 text-white md:pt-20 md:pb-14">
+  <section class="relative w-full overflow-hidden pt-14 pb-10 text-white md:pt-28 md:pb-14">
     <div
       class="mx-auto flex w-full max-w-screen-xl flex-col items-center gap-8 px-6 md:flex-row md:gap-10 md:px-10"
     >
