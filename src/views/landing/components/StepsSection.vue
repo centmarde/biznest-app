@@ -6,12 +6,8 @@ import TypographyLarge from '@/components/typography/TypographyLarge.vue'
 import TypographyMuted from '@/components/typography/TypographyMuted.vue'
 import TypographySmall from '@/components/typography/TypographySmall.vue'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import {
-  stepGuideItems,
-  stepVisualMap,
-  type StepGuideItem,
-  type StepIcon,
-} from '../constants/steps'
+import type { StepGuideItem, StepIcon } from '../types/steps.types'
+import { stepGuideItems, stepVisualMap } from '../utils/steps'
 
 defineOptions({
   name: 'StepsSection',
@@ -29,7 +25,7 @@ const resolveCardHoverClass = (icon: StepGuideItem['icon']): string => stepVisua
 </script>
 
 <template>
-  <section class="w-full bg-far py-20 md:py-28">
+  <section class="w-full bg-far py-14 md:py-20">
     <div class="mx-auto w-full max-w-screen-xl px-6 md:px-10">
       <!-- Heading -->
       <div class="mx-auto mb-14 max-w-4xl text-center md:mb-16">
