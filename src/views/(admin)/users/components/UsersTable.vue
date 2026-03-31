@@ -25,9 +25,11 @@ import { Pencil, Trash2 } from 'lucide-vue-next'
 const props = withDefaults(
   defineProps<{
     rows?: UserRow[]
+    isLoading?: boolean
   }>(),
   {
     rows: () => [],
+    isLoading: false,
   },
 )
 
@@ -96,6 +98,7 @@ watch(
         </TableHeader>
 
         <TableBody>
+          <template v-if="!isLoading && hasRows">
           <TableRow v-for="row in paginatedRows" :key="row.id">
             <TableCell class="px-4 py-3 font-medium">{{ row.id }}</TableCell>
             <TableCell class="px-4 py-3">{{ row.fullName }}</TableCell>
@@ -122,8 +125,15 @@ watch(
               </div>
             </TableCell>
           </TableRow>
+          </template>
 
-          <TableRow v-if="!hasRows">
+          <TableRow v-if="isLoading">
+            <TableCell colspan="6" class="px-4 py-10 text-center text-muted-foreground">
+              Loading users...
+            </TableCell>
+          </TableRow>
+
+          <TableRow v-else-if="!hasRows">
             <TableCell colspan="6" class="px-4 py-10 text-center text-muted-foreground">
               No users found.
             </TableCell>
