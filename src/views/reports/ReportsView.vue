@@ -19,7 +19,7 @@ const { value, tabs, loading, error, canExport, handleTabChange, handleExport } 
         v-for="(tab, index) in tabs" :key="index" role="tabpanel" :hidden="value !== index" :id="`simple-tabpanel-${index}`"
         :aria-labelledby="`simple-tab-${index}`"
       >
-        <ReportTable v-if="value === index" :table-data="tab.tableData" :content="tab.content" />
+        <ReportTable :table-data="tab.tableData" :content="tab.content" />
       </div>
     </div>
   </ReportsHeader>

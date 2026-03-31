@@ -98,8 +98,7 @@ export const useReportsStore = defineStore('reports', () => {
           tableData: [],
         }))
       }
-
-      console.log('Fetched reports from Supabase:', tabs.value)
+      
     }
 
     loading.value = false
