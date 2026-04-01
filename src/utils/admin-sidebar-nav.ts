@@ -3,7 +3,7 @@ import type { AdminNavItem } from '@/types/admin-sidebar.types'
 export const primaryAdminNavItems: AdminNavItem[] = [
   { label: 'Dashboard', to: '/admin', icon: 'dashboard' },
   { label: 'Map', to: '/admin/map', icon: 'map' },
-  { label: 'Report', to: '/admin/report', icon: 'report' },
+  { label: 'Report', to: '/admin/reports', icon: 'report' },
   { label: 'Analytics', to: '/admin/analytics', icon: 'analytics' },
 ]
 
