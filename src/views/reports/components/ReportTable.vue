@@ -1,33 +1,51 @@
 <script setup lang="ts">
-import type { ReportsTableProps } from '@/types/reports.types';
+import type { ReportsTableProps } from '@/types/reports.types'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
-defineProps<ReportsTableProps>();
+defineProps<ReportsTableProps>()
 </script>
 
 <template>
-  <div class="p-6">
-    <table v-if="tableData && tableData.length > 0" class="w-full border-collapse">
-      <thead>
-        <tr class="bg-muted border-b-2 border-border">
-          <th class="px-4 py-3 text-left font-semibold text-xs text-foreground uppercase">Business Owner</th>
-          <th class="px-4 py-3 text-left font-semibold text-xs text-foreground uppercase">Contact Number</th>
-          <th class="px-4 py-3 text-left font-semibold text-xs text-foreground uppercase">Business Location</th>
-          <th class="px-4 py-3 text-left font-semibold text-xs text-foreground uppercase">Zoning Classification</th>
-          <th class="px-4 py-3 text-left font-semibold text-xs text-foreground uppercase">GeoTag</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(row, rowIndex) in tableData" :key="rowIndex" class="border-b border-border last:border-b-0">
-          <td class="px-4 py-3 text-sm text-foreground">{{ row.businessOwner }}</td>
-          <td class="px-4 py-3 text-sm text-foreground">{{ row.contactNumber }}</td>
-          <td class="px-4 py-3 text-sm text-foreground">{{ row.businessLocation }}</td>
-          <td class="px-4 py-3 text-sm text-foreground">{{ row.zoningClassification }}</td>
-          <td class="px-4 py-3 text-sm text-foreground">{{ row.geotag }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <div v-else class="text-center py-10 text-muted-foreground">
-      {{ content }}
+  <div class="space-y-4 p-6">
+    <div class="overflow-hidden rounded-xl border bg-background">
+      <Table class="min-w-[780px] text-left text-sm">
+        <TableHeader>
+          <TableRow
+            class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground hover:bg-muted/40"
+          >
+            <TableHead class="px-4 py-3 font-medium">Business Owner</TableHead>
+            <TableHead class="px-4 py-3 font-medium">Contact Number</TableHead>
+            <TableHead class="px-4 py-3 font-medium">Business Location</TableHead>
+            <TableHead class="px-4 py-3 font-medium">Zoning Classification</TableHead>
+            <TableHead class="px-4 py-3 font-medium">GeoTag</TableHead>
+          </TableRow>
+        </TableHeader>
+
+        <TableBody>
+          <TableRow v-for="(row, rowIndex) in tableData" :key="rowIndex">
+            <TableCell class="px-4 py-3">{{ row.businessOwner }}</TableCell>
+            <TableCell class="px-4 py-3">{{ row.contactNumber }}</TableCell>
+            <TableCell class="px-4 py-3 text-muted-foreground">{{
+              row.businessLocation
+            }}</TableCell>
+            <TableCell class="px-4 py-3">{{ row.zoningClassification }}</TableCell>
+            <TableCell class="px-4 py-3">{{ row.geotag }}</TableCell>
+          </TableRow>
+
+          <TableRow v-if="!tableData || tableData.length === 0">
+            <TableCell colspan="5" class="px-4 py-10 text-center text-muted-foreground">
+              {{ content }}
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
   </div>
 </template>
