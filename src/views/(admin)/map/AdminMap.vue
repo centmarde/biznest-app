@@ -1,6 +1,6 @@
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Layers, PenTool } from 'lucide-vue-next'
 import Map from '@/components/map/Map.vue'
 import { useBarangayBorders } from '@/composables/map/useBarangayBorders'
@@ -204,6 +204,44 @@ function undoLastDrawPoint(): void {
   drawPoints.value = drawPoints.value.slice(0, -1)
 }
 
+function handleDrawUndoShortcut(event: KeyboardEvent): void {
+  if (!isDrawMode.value || drawPoints.value.length === 0) {
+    return
+  }
+
+  if (event.defaultPrevented || event.shiftKey || event.altKey) {
+    return
+  }
+
+  const isUndoShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z'
+  if (!isUndoShortcut) {
+    return
+  }
+
+  const target = event.target as HTMLElement | null
+  const isTypingTarget = target
+    && (
+      target.tagName === 'INPUT'
+      || target.tagName === 'TEXTAREA'
+      || target.isContentEditable
+    )
+
+  if (isTypingTarget) {
+    return
+  }
+
+  event.preventDefault()
+  undoLastDrawPoint()
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleDrawUndoShortcut)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleDrawUndoShortcut)
+})
+
 function cancelDrawZoneMode(): void {
   isDrawMode.value = false
   drawPoints.value = []
@@ -353,7 +391,7 @@ function handleFocusMappedZone(zoneId: string): void {
             :disabled="drawPoints.length === 0"
             @click="undoLastDrawPoint"
           >
-            Undo Last Point
+            Undo
           </Button>
           <Button size="sm" variant="outline" @click="cancelDrawZoneMode">Cancel</Button>
           <Button size="sm" :disabled="drawPoints.length < 3" @click="finishDrawZoneMode">
