@@ -1,10 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
+import LandingView from '@/views/landing/LandingView.vue'
+
+//Layouts
 import OuterLayout from '@/layouts/OuterLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import InnerLayout from '@/layouts/InnerLayout.vue'
-import LandingView from '@/views/landing/LandingView.vue'
-import ReportsView from '@/views/reports/ReportsView.vue'
 
 //Auth Routes
 import LoginView from '@/views/auth/login/LoginView.vue'
@@ -13,6 +14,7 @@ import RegisterView from '@/views/auth/register/RegisterView.vue'
 //Admin Routes
 import TestView from '@/views/test/TestView.vue'
 import UsersView from '@/views/(admin)/users/UsersView.vue'
+import ReportsView from '@/views/(admin)/reports/ReportsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
