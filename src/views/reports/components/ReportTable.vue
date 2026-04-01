@@ -72,7 +72,7 @@ watch(
 </script>
 
 <template>
-  <div class="space-y-4 p-6">
+  <div class="space-y-4">
     <div class="overflow-hidden rounded-xl border bg-background">
       <Table class="min-w-[780px] text-left text-sm">
         <TableHeader>
