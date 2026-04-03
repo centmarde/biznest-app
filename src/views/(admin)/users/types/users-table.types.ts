@@ -9,3 +9,9 @@ export interface UserRow {
   role: string
   status: UserStatus
 }
+
+export interface UserRoleCounts {
+  users: number
+  admin: number
+  superadmin: number
+}
