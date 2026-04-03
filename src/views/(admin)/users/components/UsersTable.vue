@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
-import { USER_STATUS_CLASS } from '@/views/(admin)/users/utils/users-table.utils'
 import { Pencil, Trash2 } from 'lucide-vue-next'
 
 const props = withDefaults(
@@ -90,7 +89,6 @@ watch(
             <TableHead class="px-4 py-3 font-medium">Name</TableHead>
             <TableHead class="px-4 py-3 font-medium">Email</TableHead>
             <TableHead class="px-4 py-3 font-medium">Role</TableHead>
-            <TableHead class="px-4 py-3 font-medium">Status</TableHead>
             <TableHead class="px-4 py-3 text-right font-medium">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -98,17 +96,9 @@ watch(
         <TableBody>
           <TableRow v-for="row in paginatedRows" :key="row.id">
             <TableCell class="px-4 py-3 font-medium">{{ row.id }}</TableCell>
-            <TableCell class="px-4 py-3">{{ row.fullName }}</TableCell>
+            <TableCell class="px-4 py-3">{{ row.username }}</TableCell>
             <TableCell class="px-4 py-3 text-muted-foreground">{{ row.email }}</TableCell>
             <TableCell class="px-4 py-3">{{ row.role }}</TableCell>
-            <TableCell class="px-4 py-3">
-              <span
-                class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
-                :class="USER_STATUS_CLASS[row.status]"
-              >
-                {{ row.status }}
-              </span>
-            </TableCell>
             <TableCell class="px-4 py-3">
               <div class="flex items-center justify-end gap-2">
                 <Button size="sm" variant="outline">

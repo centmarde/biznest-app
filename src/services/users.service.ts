@@ -1,9 +1,9 @@
-import type { UserRow, UserStatus } from '@/views/(admin)/users/types/users-table.types'
+import type { UserRow, RawUserMetaData } from '@/views/(admin)/users/types/users-table.types'
 import { getSupabaseClient } from '@/services/supabase.client'
 
 type GenericDbRow = Record<string, unknown>
 
-const PROFILE_TABLE = 'profiles'
+const PROFILE_TABLE = 'auth.users'
 const GET_ALL_USERS_RPC = 'get_all_users'
 
 const getErrorMessage = (error: unknown): string => {
@@ -34,18 +34,6 @@ const getText = (row: GenericDbRow, keys: string[]): string => {
   return ''
 }
 
-const getFlag = (row: GenericDbRow, keys: string[]): boolean | null => {
-  for (const key of keys) {
-    const value = row[key]
-
-    if (typeof value === 'boolean') {
-      return value
-    }
-  }
-
-  return null
-}
-
 const normalizeRole = (value: string): string => {
   const normalized = value.toLowerCase()
 
@@ -60,43 +48,6 @@ const normalizeRole = (value: string): string => {
   return 'user'
 }
 
-const normalizeStatus = (row: GenericDbRow): UserStatus => {
-  const explicitStatus = getText(row, ['status'])
-
-  if (explicitStatus) {
-    const normalized = explicitStatus.toLowerCase()
-
-    if (normalized === 'active') {
-      return 'Active'
-    }
-
-    if (normalized === 'suspended') {
-      return 'Suspended'
-    }
-
-    if (normalized === 'pending') {
-      return 'Pending'
-    }
-  }
-
-  const isSuspended = getFlag(row, ['is_suspended'])
-  if (isSuspended) {
-    return 'Suspended'
-  }
-
-  const isActive = getFlag(row, ['is_active'])
-  if (isActive === false) {
-    return 'Pending'
-  }
-
-  const emailConfirmedAt = getText(row, ['email_confirmed_at'])
-  if (!emailConfirmedAt) {
-    return 'Pending'
-  }
-
-  return 'Active'
-}
-
 const toUserRow = (input: unknown): UserRow | null => {
   const row = asRecord(input)
 
@@ -105,17 +56,34 @@ const toUserRow = (input: unknown): UserRow | null => {
     return null
   }
 
-  const fullName = getText(row, ['full_name', 'fullname', 'username', 'name']) || 'Unknown User'
-  const email = getText(row, ['email']) || 'No email'
-  const role = normalizeRole(getText(row, ['role']) || 'user')
-  const status = normalizeStatus(row)
+  let username = 'Unknown User'
+  let email = 'No email'
+  let role = 'user'
+
+  // Extract from raw_user_meta_data JSONB column if present
+  const rawMeta = row['raw_user_meta_data']
+  if (typeof rawMeta === 'string') {
+    try {
+      const meta: RawUserMetaData = JSON.parse(rawMeta)
+      username = meta.username || username
+      email = meta.email || email
+      role = normalizeRole(meta.role || role)
+    } catch {
+      // Log error for debugging
+      console.error('Failed to parse raw_user_meta_data JSON')
+    }
+  } else if (typeof rawMeta === 'object' && rawMeta !== null) {
+    // If already parsed (from Supabase client)
+    username = (rawMeta as RawUserMetaData).username || username
+    email = (rawMeta as RawUserMetaData).email || email
+    role = normalizeRole((rawMeta as RawUserMetaData).role || role)
+  }
 
   return {
     id,
-    fullName,
+    username,
     email,
     role,
-    status,
   }
 }
 
