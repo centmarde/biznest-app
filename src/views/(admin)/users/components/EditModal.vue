@@ -8,7 +8,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
+import { updateUserProfile } from '@/services/users.service'
+import { useAlertContext } from '@/composables/useAlert'
+import { Loader2 } from 'lucide-vue-next'
 
 const props = defineProps<{
   isOpen: boolean
@@ -17,10 +28,33 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:isOpen', val: boolean): void
+  (e: 'refresh'): void
 }>()
+
+const { showSuccess, showAlert } = useAlertContext()
 
 const username = ref('')
 const email = ref('')
+const role = ref('user')
+const city = ref('')
+const isLoading = ref(false)
+
+const PHILIPPINE_CITIES = [
+  'Manila',
+  'Quezon City',
+  'Cebu City',
+  'Davao City',
+  'Makati',
+  'Taguig',
+  'Pasig',
+  'Mandaluyong',
+  'Iloilo City',
+  'Cagayan de Oro',
+  'Zamboanga City',
+  'Antipolo',
+  'Caloocan',
+  'Valenzuela',
+]
 
 watch(
   () => props.user,
@@ -28,38 +62,127 @@ watch(
     if (user) {
       username.value = user.username
       email.value = user.email
+      role.value = user.role.toLowerCase()
+      city.value = user.city || ''
     } else {
       username.value = ''
       email.value = ''
+      role.value = 'user'
+      city.value = ''
     }
   },
   { immediate: true },
 )
 
 const closeModal = () => {
+  if (isLoading.value) return
   emit('update:isOpen', false)
 }
 
-const saveChanges = () => {
-  // Logic to save changes
-  closeModal()
+const saveChanges = async () => {
+  if (!props.user) return
+
+  try {
+    isLoading.value = true
+    await updateUserProfile(props.user.id, {
+      username: username.value,
+      role: role.value,
+      city: city.value,
+    })
+    emit('refresh')
+    emit('update:isOpen', false)
+    showSuccess('User profile updated successfully.')
+  } catch (error) {
+    console.error('Failed to update user:', error)
+    emit('update:isOpen', false)
+    showAlert({
+      title: 'Update Failed',
+      description: error instanceof Error ? error.message : 'An unexpected error occurred.',
+      tone: 'destructive',
+    })
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
 <template>
-  <Dialog :open="props.isOpen" @update:open="emit('update:isOpen', $event)">
-    <DialogContent>
+  <Dialog
+    :open="props.isOpen"
+    @update:open="
+      (val) => {
+        if (!isLoading) emit('update:isOpen', val)
+      }
+    "
+  >
+    <DialogContent class="sm:max-w-[425px]">
       <DialogHeader>
-        <DialogTitle>Edit User</DialogTitle>
+        <DialogTitle>Edit User Profile</DialogTitle>
       </DialogHeader>
-      <div class="space-y-4">
-        <!-- Add form fields here -->
-        <input type="text" placeholder="Username" class="input" v-model="username" />
-        <input type="email" placeholder="Email" class="input" v-model="email" />
+
+      <div class="grid gap-4 py-4">
+        <div class="grid gap-2">
+          <Label for="username">Username</Label>
+          <Input id="username" placeholder="Username" v-model="username" :disabled="isLoading" />
+        </div>
+
+        <div class="grid gap-2">
+          <Label for="email">Email</Label>
+          <Input id="email" type="email" placeholder="Email" v-model="email" disabled />
+          <p class="text-xs text-muted-foreground">Email addresses cannot be changed here.</p>
+        </div>
+
+        <div class="grid gap-2">
+          <Label for="role">Role</Label>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                id="role"
+                variant="outline"
+                class="w-full justify-start font-normal"
+                :class="!role && 'text-muted-foreground'"
+                :disabled="isLoading"
+              >
+                {{ role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Select a role' }}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" class="w-[375px]">
+              <DropdownMenuItem @click="role = 'user'">User</DropdownMenuItem>
+              <DropdownMenuItem @click="role = 'admin'">Admin</DropdownMenuItem>
+              <DropdownMenuItem @click="role = 'superadmin'">Superadmin</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div class="grid gap-2">
+          <Label for="city">City</Label>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                id="city"
+                variant="outline"
+                class="w-full justify-start font-normal"
+                :class="!city && 'text-muted-foreground'"
+                :disabled="isLoading"
+              >
+                {{ city ? city : 'Select a city' }}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" class="w-[375px] max-h-[300px] overflow-y-auto">
+              <DropdownMenuItem v-for="c in PHILIPPINE_CITIES" :key="c" @click="city = c">
+                {{ c }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+
       <DialogFooter>
-        <Button variant="secondary" @click="closeModal">Cancel</Button>
-        <Button @click="saveChanges">Save</Button>
+        <Button variant="secondary" @click="closeModal" :disabled="isLoading">Cancel</Button>
+        <Button @click="saveChanges" :disabled="isLoading">
+          <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
+          Save Changes
+        </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

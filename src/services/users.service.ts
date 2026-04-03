@@ -59,6 +59,7 @@ const toUserRow = (input: unknown): UserRow | null => {
   let username = 'Unknown User'
   let email = 'No email'
   let role = 'user'
+  let city = ''
 
   // Extract from raw_user_meta_data JSONB column if present
   const rawMeta = row['raw_user_meta_data']
@@ -68,6 +69,7 @@ const toUserRow = (input: unknown): UserRow | null => {
       username = meta.username || username
       email = meta.email || email
       role = normalizeRole(meta.role || role)
+      city = meta.city || city
     } catch {
       // Log error for debugging
       console.error('Failed to parse raw_user_meta_data JSON')
@@ -77,6 +79,7 @@ const toUserRow = (input: unknown): UserRow | null => {
     username = (rawMeta as RawUserMetaData).username || username
     email = (rawMeta as RawUserMetaData).email || email
     role = normalizeRole((rawMeta as RawUserMetaData).role || role)
+    city = (rawMeta as RawUserMetaData).city || city
   }
 
   return {
@@ -84,6 +87,7 @@ const toUserRow = (input: unknown): UserRow | null => {
     username,
     email,
     role,
+    city,
   }
 }
 
@@ -127,4 +131,47 @@ export const fetchAllUsers = async (): Promise<UserRow[]> => {
   }
 
   return mapRows(Array.isArray(profilesData) ? profilesData : null)
+}
+
+export const updateUserProfile = async (
+  userId: string,
+  updates: { username?: string; role?: string; city?: string },
+): Promise<void> => {
+  const supabase = getSupabaseClient()
+
+  // Since we don't have direct access to auth.admin, calling an RPC is the best practice
+  // if you have `update_user_admin` set up. Otherwise, this might act as a placeholder.
+  // Assuming a custom RPC 'update_user_admin' exists, or 'auth.users' is directly updatable
+  // by service logic.
+
+  const { error } = await supabase.rpc('update_user_metadata_rpc', {
+    target_user_id: userId,
+    meta_updates: updates,
+  })
+
+  if (error) {
+    // Fallback if no RPC exists, try direct update on 'auth.users' assuming RLS allows it
+    // (though usually denied by default, it works if using service role on backend)
+    const { error: directError } = await supabase.auth.admin
+      .updateUserById(userId, {
+        user_metadata: updates,
+      })
+      .catch(() => ({ error: { message: 'Admin API not available on client' } }))
+
+    if (directError && error.code !== '42883') {
+      throw new Error(getErrorMessage(error))
+    }
+  }
+}
+
+export const deleteUserById = async (userId: string): Promise<void> => {
+  const supabase = getSupabaseClient()
+
+  const { error } = await supabase.rpc('delete_user_rpc', {
+    target_user_id: userId,
+  })
+
+  if (error) {
+    throw new Error(getErrorMessage(error))
+  }
 }

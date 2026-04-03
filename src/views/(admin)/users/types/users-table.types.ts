@@ -5,6 +5,7 @@ export interface UserRow {
   username: string
   email: string
   role: string
+  city: string
 }
 
 export interface UserRoleCounts {
@@ -17,4 +18,5 @@ export interface RawUserMetaData {
   username?: string
   email?: string
   role?: string
+  city?: string
 }

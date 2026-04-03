@@ -86,6 +86,10 @@ const deleteModalOpen = ref(false)
 const selectedUserToEdit = ref<UserRow | null>(null)
 const selectedUserToDelete = ref<UserRow | null>(null)
 
+const emit = defineEmits<{
+  (e: 'refresh'): void
+}>()
+
 const openEditModal = (row: UserRow) => {
   selectedUserToEdit.value = row
   editModalOpen.value = true
@@ -94,6 +98,10 @@ const openEditModal = (row: UserRow) => {
 const openDeleteModal = (row: UserRow) => {
   selectedUserToDelete.value = row
   deleteModalOpen.value = true
+}
+
+const onRefresh = () => {
+  emit('refresh')
 }
 </script>
 
@@ -177,8 +185,12 @@ const openDeleteModal = (row: UserRow) => {
     </Pagination>
   </div>
 
-  <EditModal v-model:isOpen="editModalOpen" :user="selectedUserToEdit" />
-  <ConfirmDeleteModal v-model:isOpen="deleteModalOpen" :user="selectedUserToDelete" />
+  <EditModal v-model:isOpen="editModalOpen" :user="selectedUserToEdit" @refresh="onRefresh" />
+  <ConfirmDeleteModal
+    v-model:isOpen="deleteModalOpen"
+    :user="selectedUserToDelete"
+    @refresh="onRefresh"
+  />
 </template>
 
 <style scoped></style>
