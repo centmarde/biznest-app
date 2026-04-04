@@ -5,7 +5,12 @@ import Header from '@/views/(admin)/users/components/UsersHeader.vue'
 import UsersTable from '@/views/(admin)/users/components/UsersTable.vue'
 import { fetchAllUsers } from '@/services/users.service'
 import type { UserRoleFilter, UserRow } from '@/views/(admin)/users/types/users-table.types'
-import { filterUserRows, getUserRoleCounts } from '@/views/(admin)/users/utils/users-table.utils'
+import {
+  filterUserRows,
+  getUserRoleCounts,
+  exportUsersToCsv,
+  parseUsersCsv,
+} from '@/views/(admin)/users/utils/users-table.utils'
 
 const rows = ref<UserRow[]>([])
 const isLoadingUsers = ref(false)
@@ -41,6 +46,25 @@ const filteredRows = computed<UserRow[]>(() =>
 
 const roleCounts = computed(() => getUserRoleCounts(rows.value))
 
+const handleExportCsv = () => {
+  exportUsersToCsv(filteredRows.value)
+}
+
+const handleImportCsv = async (file: File) => {
+  try {
+    const newRows = await parseUsersCsv(file)
+    if (newRows.length > 0) {
+      // Basic implementation for mock/preview: append unique rows by id
+      const existingIds = new Set(rows.value.map((r) => r.id))
+      const uniqueNewRows = newRows.filter((r) => !existingIds.has(r.id))
+      rows.value = [...rows.value, ...uniqueNewRows]
+    }
+  } catch (error) {
+    console.error('Failed to parse CSV', error)
+    usersError.value = 'Failed to read the imported CSV.'
+  }
+}
+
 onMounted(() => {
   void loadUsers()
 })
@@ -56,7 +80,7 @@ onMounted(() => {
       :superadmin-count="roleCounts.superadmin"
     >
       <template #actions>
-        <ActionButtons />
+        <ActionButtons @export="handleExportCsv" @import="handleImportCsv" />
       </template>
     </Header>
 

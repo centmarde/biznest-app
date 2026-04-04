@@ -62,3 +62,72 @@ export const getRoleBadgeVariant = (role: string): "default" | "secondary" | "de
       return 'secondary'
   }
 }
+
+export const exportUsersToCsv = (rows: UserRow[]): void => {
+  if (rows.length === 0) return
+
+  const headers = ['ID', 'Username', 'Email', 'Role', 'City']
+  const csvContent = [
+    headers.join(','),
+    ...rows.map((row) =>
+      [
+        `"${row.id}"`,
+        `"${row.username.replace(/"/g, '""')}"`,
+        `"${row.email.replace(/"/g, '""')}"`,
+        `"${row.role}"`,
+        `"${row.city.replace(/"/g, '""')}"`,
+      ].join(','),
+    ),
+  ].join('\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `users_export_${new Date().toISOString().split('T')[0]}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+export const parseUsersCsv = async (file: File): Promise<UserRow[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result as string
+      if (!text) {
+        resolve([])
+        return
+      }
+
+      // Basic CSV parsing
+      const lines = text.split('\n').filter((line) => line.trim().length > 0)
+      if (lines.length <= 1) {
+        resolve([])
+        return
+      }
+
+      const rows: UserRow[] = []
+      // Skip header (i=1)
+      for (let i = 1; i < lines.length; i++) {
+        // Simple regex to split by comma outside quotes
+        const line = lines[i] || ''
+        const parts = line.match(/(?:\\"|[^,])+/g)
+        if (!parts || parts.length < 5) continue
+
+        const cleanPart = (str: string) => str.replace(/^"|"$/g, '').replace(/""/g, '"').trim()
+
+        rows.push({
+          id: cleanPart(parts[0] || ''),
+          username: cleanPart(parts[1] || ''),
+          email: cleanPart(parts[2] || ''),
+          role: cleanPart(parts[3] || ''),
+          city: cleanPart(parts[4] || ''),
+        })
+      }
+      resolve(rows)
+    }
+    reader.onerror = (error) => reject(error)
+    reader.readAsText(file)
+  })
+}
