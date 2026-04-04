@@ -1,31 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
-import { Download, Upload, UserPlus } from 'lucide-vue-next'
+import { Upload, UserPlus } from 'lucide-vue-next'
 
 const emit = defineEmits<{
   (e: 'export'): void
   (e: 'import', file: File): void
   (e: 'add-user'): void
 }>()
-
-const fileInput = ref<HTMLInputElement | null>(null)
-
-const triggerImport = () => {
-  fileInput.value?.click()
-}
-
-const handleFileUpload = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (file) {
-    emit('import', file)
-  }
-  // Reset input
-  if (target) {
-    target.value = ''
-  }
-}
 
 const triggerExport = () => {
   emit('export')
@@ -42,17 +23,6 @@ const triggerAddUser = () => {
       <UserPlus class="size-4" />
       Add User
     </Button>
-    <Button variant="outline" @click="triggerImport">
-      <Download class="size-4" />
-      Import
-    </Button>
-    <input
-      type="file"
-      accept=".csv"
-      ref="fileInput"
-      class="hidden"
-      @change="handleFileUpload"
-    />
     <Button variant="outline" @click="triggerExport">
       <Upload class="size-4" />
       Export
