@@ -126,6 +126,7 @@ const onUserUpdated = (user: UserRow) => {
             <TableHead class="px-4 py-3 font-medium">ID</TableHead>
             <TableHead class="px-4 py-3 font-medium">Name</TableHead>
             <TableHead class="px-4 py-3 font-medium">Email</TableHead>
+            <TableHead class="px-4 py-3 font-medium">City</TableHead>
             <TableHead class="px-4 py-3 font-medium">Role</TableHead>
             <TableHead class="px-4 py-3 text-right font-medium">Actions</TableHead>
           </TableRow>
@@ -136,6 +137,7 @@ const onUserUpdated = (user: UserRow) => {
             <TableCell class="px-4 py-3 font-medium">{{ row.id }}</TableCell>
             <TableCell class="px-4 py-3">{{ row.username }}</TableCell>
             <TableCell class="px-4 py-3 text-muted-foreground">{{ row.email }}</TableCell>
+            <TableCell class="px-4 py-3">{{ row.city }}</TableCell>
             <TableCell class="px-4 py-3">{{ row.role }}</TableCell>
             <TableCell class="px-4 py-3">
               <div class="flex items-center justify-end gap-2">
