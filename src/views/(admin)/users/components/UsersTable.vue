@@ -18,7 +18,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
+import { getRoleBadgeVariant } from '@/views/(admin)/users/utils/users-table.utils'
 import { Pencil, Trash2 } from 'lucide-vue-next'
 import EditModal from './EditModal.vue'
 import ConfirmDeleteModal from './ConfirmDeleteModal.vue'
@@ -138,7 +140,9 @@ const onUserUpdated = (user: UserRow) => {
             <TableCell class="px-4 py-3">{{ row.username }}</TableCell>
             <TableCell class="px-4 py-3 text-muted-foreground">{{ row.email }}</TableCell>
             <TableCell class="px-4 py-3">{{ row.city }}</TableCell>
-            <TableCell class="px-4 py-3">{{ row.role }}</TableCell>
+            <TableCell class="px-4 py-3">
+              <Badge :variant="getRoleBadgeVariant(row.role)">{{ row.role }}</Badge>
+            </TableCell>
             <TableCell class="px-4 py-3">
               <div class="flex items-center justify-end gap-2">
                 <Button size="sm" variant="outline" @click="openEditModal(row)">
