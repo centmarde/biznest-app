@@ -2,10 +2,8 @@ export type RoleStatus = 'active' | 'inactive'
 
 export interface RoleRow {
   id: string
-  name: string
+  title: string
   description: string
-  status: RoleStatus
-  isSystem: boolean
 }
 
 export interface RoleCounts {

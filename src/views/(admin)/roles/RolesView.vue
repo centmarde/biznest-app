@@ -1,45 +1,17 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import RolesHeader from '@/views/(admin)/roles/components/RolesHeader.vue'
 import RolesButtons from '@/views/(admin)/roles/components/RolesButtons.vue'
 import RolesModal from '@/views/(admin)/roles/components/RolesModal.vue'
 import RolesCards from '@/views/(admin)/roles/components/RolesCards.vue'
 import type { RoleRow } from '@/views/(admin)/roles/types/roles.types'
 import { getRoleCounts, filterRoleRows } from '@/views/(admin)/roles/utils/roles.utils'
+import { fetchRoles } from '@/services/roles.service'
 
 const searchQuery = ref('')
 const addRoleModalOpen = ref(false)
 
-const rows = ref<RoleRow[]>([
-  {
-    id: 'role-1',
-    name: 'Superadmin',
-    description: 'Full platform control and all administrative permissions.',
-    status: 'active',
-    isSystem: true,
-  },
-  {
-    id: 'role-2',
-    name: 'Admin',
-    description: 'Can manage users, reports, and operational settings.',
-    status: 'active',
-    isSystem: true,
-  },
-  {
-    id: 'role-3',
-    name: 'Reviewer',
-    description: 'Reviews submissions and moderates role-based workflows.',
-    status: 'active',
-    isSystem: false,
-  },
-  {
-    id: 'role-4',
-    name: 'Assistant',
-    description: 'Supports daily operations with limited scoped permissions.',
-    status: 'inactive',
-    isSystem: false,
-  },
-])
+const rows = ref<RoleRow[]>([])
 
 const roleCounts = computed(() => getRoleCounts(rows.value))
 
@@ -49,9 +21,21 @@ const openAddRoleModal = (): void => {
   addRoleModalOpen.value = true
 }
 
-const refreshRoles = (): void => {
-  rows.value = [...rows.value]
+const loadRoles = async (): Promise<void> => {
+  try {
+    rows.value = await fetchRoles()
+  } catch (error) {
+    console.error('Failed to load roles:', error)
+  }
 }
+
+const refreshRoles = async (): Promise<void> => {
+  await loadRoles()
+}
+
+onMounted(() => {
+  loadRoles()
+})
 </script>
 
 <template>
@@ -66,9 +50,7 @@ const refreshRoles = (): void => {
         <RolesButtons @add-role="openAddRoleModal" @refresh="refreshRoles" />
       </template>
     </RolesHeader>
-
     <RolesCards :roles="filteredRows" />
-
     <RolesModal v-model:isOpen="addRoleModalOpen" />
   </section>
 </template>

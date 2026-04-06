@@ -8,10 +8,7 @@ export const getRoleCounts = (rows: RoleRow[]): RoleCounts => {
   return { total, active, system }
 }
 
-export const filterRoleRows = (
-  rows: RoleRow[],
-  searchQuery: string,
-): RoleRow[] => {
+export const filterRoleRows = (rows: RoleRow[], searchQuery: string): RoleRow[] => {
   const normalizedQuery = searchQuery.trim().toLowerCase()
 
   if (!normalizedQuery) {
