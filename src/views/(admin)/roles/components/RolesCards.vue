@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import type { RoleRow } from '@/views/(admin)/roles/types/roles.types'
+import { getRoleBadgeVariant } from '@/utils/roles.utils'
 
 defineProps<{
   roles: RoleRow[]
@@ -19,11 +21,13 @@ defineProps<{
     <Card
       v-for="role in roles"
       :key="role.id"
-      class="flex flex-col shadow-sm transition-all hover:shadow-md"
+      class="flex flex-col shadow-sm transition-all hover:shadow-md hover:cursor-pointer hover:bg-muted/10"
     >
       <CardHeader class="pb-3">
         <div class="flex items-start justify-between gap-4">
-          <CardTitle class="text-lg">{{ role.title }}</CardTitle>
+          <CardTitle class="text-lg">
+            <Badge :variant="getRoleBadgeVariant(role.title)" class="text-sm">{{ role.title }}</Badge>
+          </CardTitle>
         </div>
         <CardDescription class="mt-1.5 line-clamp-2">
           {{ role.description }}
