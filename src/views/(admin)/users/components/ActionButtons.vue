@@ -4,7 +4,6 @@ import { Upload, UserPlus } from 'lucide-vue-next'
 
 const emit = defineEmits<{
   (e: 'export'): void
-  (e: 'import', file: File): void
   (e: 'add-user'): void
 }>()
 

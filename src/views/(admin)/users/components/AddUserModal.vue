@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { TypographyMuted, TypographySmall } from '@/components/typography'
 import { getSupabaseClient } from '@/services/supabase.client'
 import { Copy, Check } from 'lucide-vue-next'
 
@@ -34,11 +35,9 @@ const generateLink = async () => {
   try {
     const supabase = getSupabaseClient()
     const token = crypto.randomUUID()
-    
+
     // Using admin_invites table which we created in SQL script
-    const { error } = await supabase
-      .from('admin_invites')
-      .insert({ token })
+    const { error } = await supabase.from('admin_invites').insert({ token })
 
     if (error) {
       if (error.code === '42P01') {
@@ -98,20 +97,27 @@ const onOpenChange = (open: boolean) => {
         </div>
 
         <div v-else class="flex flex-col gap-3">
-          <p class="text-sm font-medium">Share this link:</p>
+          <TypographySmall as="p">Share this link:</TypographySmall>
           <div class="flex items-center gap-2">
             <Input :model-value="generatedLink" readonly class="flex-1" />
-            <Button size="icon" variant="outline" @click="copyLink" :class="{ 'text-green-600 border-green-600': hasCopied }">
+            <Button
+              size="icon"
+              variant="outline"
+              @click="copyLink"
+              :class="{ 'text-green-600 border-green-600': hasCopied }"
+            >
               <Check v-if="hasCopied" class="size-4" />
               <Copy v-else class="size-4" />
             </Button>
           </div>
-          <p class="text-xs text-muted-foreground text-center">
+          <TypographyMuted as="p" class="mt-0 text-center text-xs">
             Note: This link will expire after a single use.
-          </p>
+          </TypographyMuted>
         </div>
-        
-        <p v-if="errorMsg" class="text-sm text-destructive text-center">{{ errorMsg }}</p>
+
+        <TypographySmall v-if="errorMsg" as="p" class="mt-0 text-center text-destructive">{{
+          errorMsg
+        }}</TypographySmall>
       </div>
     </DialogContent>
   </Dialog>

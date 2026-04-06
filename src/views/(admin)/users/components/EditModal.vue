@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { TypographyMuted } from '@/components/typography'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -149,7 +150,9 @@ const saveChanges = async () => {
         <div class="grid gap-2">
           <Label for="email">Email</Label>
           <Input id="email" type="email" placeholder="Email" v-model="email" disabled />
-          <p class="text-xs text-muted-foreground">Email addresses cannot be changed here.</p>
+          <TypographyMuted as="p" class="mt-0 text-xs"
+            >Email addresses cannot be changed here.</TypographyMuted
+          >
         </div>
 
         <div class="grid gap-2">
@@ -189,10 +192,14 @@ const saveChanges = async () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" class="w-[375px] max-h-[300px] overflow-y-auto">
-              <div v-if="isFetchingCities" class="p-4 text-center text-sm text-muted-foreground">
+              <TypographyMuted
+                v-if="isFetchingCities"
+                as="div"
+                class="mt-0 p-4 text-center text-sm"
+              >
                 <Loader2 class="mr-2 h-4 w-4 animate-spin inline-block" />
                 Loading cities...
-              </div>
+              </TypographyMuted>
               <template v-else>
                 <DropdownMenuItem v-for="c in PHILIPPINE_CITIES" :key="c" @click="city = c">
                   {{ c }}

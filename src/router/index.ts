@@ -16,6 +16,7 @@ import TestView from '@/views/test/TestView.vue'
 import AdminMap from '@/views/(admin)/map/AdminMap.vue'
 import UsersView from '@/views/(admin)/users/UsersView.vue'
 import ReportsView from '@/views/(admin)/reports/ReportsView.vue'
+import RolesView from '@/views/(admin)/roles/RolesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -76,6 +77,12 @@ const router = createRouter({
           path: 'users',
           name: 'users',
           component: UsersView,
+          meta: { requiresAuth: true, requiresSuperadmin: true },
+        },
+        {
+          path: 'roles',
+          name: 'roles',
+          component: RolesView,
           meta: { requiresAuth: true, requiresSuperadmin: true },
         },
       ],
