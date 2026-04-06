@@ -4,6 +4,7 @@ import ActionButtons from '@/views/(admin)/users/components/ActionButtons.vue'
 import Header from '@/views/(admin)/users/components/UsersHeader.vue'
 import UsersTable from '@/views/(admin)/users/components/UsersTable.vue'
 import AddUserModal from '@/views/(admin)/users/components/AddUserModal.vue'
+import { TypographyMuted, TypographySmall } from '@/components/typography'
 import { fetchAllUsers } from '@/services/users.service'
 import type { UserRoleFilter, UserRow } from '@/views/(admin)/users/types/users-table.types'
 import {
@@ -86,17 +87,21 @@ onMounted(() => {
       :superadmin-count="roleCounts.superadmin"
     >
       <template #actions>
-        <ActionButtons @export="handleExportCsv" @import="handleImportCsv" @add-user="handleAddUser" />
+        <ActionButtons
+          @export="handleExportCsv"
+          @import="handleImportCsv"
+          @add-user="handleAddUser"
+        />
       </template>
     </Header>
 
-    <p
+    <TypographySmall
       v-if="usersError"
       class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
     >
       {{ usersError }}
-    </p>
-    <p v-else-if="isLoadingUsers" class="text-sm text-muted-foreground">Loading users...</p>
+    </TypographySmall>
+    <TypographyMuted v-else-if="isLoadingUsers" class="mt-0">Loading users...</TypographyMuted>
 
     <UsersTable
       :rows="filteredRows"
@@ -109,7 +114,7 @@ onMounted(() => {
         }
       "
     />
-    
+
     <AddUserModal v-model:isOpen="addUserModalOpen" />
   </section>
 </template>

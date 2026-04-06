@@ -19,8 +19,9 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { TypographyMuted } from '@/components/typography'
 import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
-import { getRoleBadgeVariant } from '@/views/(admin)/users/utils/users-table.utils'
+import { getRoleBadgeVariant } from '@/utils/roles.utils'
 import { Pencil, Trash2 } from 'lucide-vue-next'
 import EditModal from './EditModal.vue'
 import ConfirmDeleteModal from './ConfirmDeleteModal.vue'
@@ -159,7 +160,7 @@ const onUserUpdated = (user: UserRow) => {
 
           <TableRow v-if="!hasRows">
             <TableCell colspan="6" class="px-4 py-10 text-center text-muted-foreground">
-              No users found.
+              <TypographyMuted as="p" class="mt-0">No users found.</TypographyMuted>
             </TableCell>
           </TableRow>
         </TableBody>

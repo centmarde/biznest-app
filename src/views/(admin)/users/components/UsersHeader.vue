@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
+import { TypographyH3, TypographyMuted, TypographySmall } from '@/components/typography'
 import type { UserRoleFilter } from '@/views/(admin)/users/types/users-table.types'
 import { ChevronDown, Search, Users } from 'lucide-vue-next'
 
@@ -36,18 +37,18 @@ const setRoleFilter = (value: UserRoleFilter): void => {
   <header class="flex flex-col gap-4">
     <div class="flex items-center gap-2">
       <Users class="text-primary shrink-0" :size="20" />
-      <h1 class="text-2xl font-semibold tracking-tight">Users Management</h1>
+      <TypographyH3 as="h1" class="mt-0 border-none pb-0 text-2xl font-semibold tracking-tight">
+        Users Management
+      </TypographyH3>
     </div>
-    <p class="text-sm text-muted-foreground">View and manage all platform users from one place.</p>
+    <TypographyMuted class="mt-0"
+      >View and manage all platform users from one place.</TypographyMuted
+    >
 
-    <div class="flex flex-col gap-3 xl:flex-row xl:items-center">
+    <div class="flex flex-col gap-3 mt-2 xl:flex-row xl:items-center">
       <div class="relative w-full xl:max-w-md">
         <Search class="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-        <Input
-          class="pl-9"
-          placeholder="Search by ID, name, or email"
-          v-model="searchQueryModel"
-        />
+        <Input class="pl-9" placeholder="Search by ID, name, or email" v-model="searchQueryModel" />
       </div>
 
       <DropdownMenu>
@@ -76,15 +77,15 @@ const setRoleFilter = (value: UserRoleFilter): void => {
 
     <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
       <div class="rounded-md border bg-muted/20 px-3 py-2">
-        <p class="text-xs text-muted-foreground uppercase">Users</p>
+        <TypographySmall as="p" class="text-muted-foreground uppercase">Users</TypographySmall>
         <p class="text-lg font-semibold">{{ props.totalUsersCount }}</p>
       </div>
       <div class="rounded-md border bg-muted/20 px-3 py-2">
-        <p class="text-xs text-muted-foreground uppercase">Admin</p>
+        <TypographySmall as="p" class="text-muted-foreground uppercase">Admin</TypographySmall>
         <p class="text-lg font-semibold">{{ props.adminCount }}</p>
       </div>
       <div class="rounded-md border bg-muted/20 px-3 py-2">
-        <p class="text-xs text-muted-foreground uppercase">Superadmin</p>
+        <TypographySmall as="p" class="text-muted-foreground uppercase">Superadmin</TypographySmall>
         <p class="text-lg font-semibold">{{ props.superadminCount }}</p>
       </div>
     </div>

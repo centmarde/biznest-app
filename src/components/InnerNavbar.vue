@@ -75,7 +75,7 @@ const handleLogout = async (): Promise<void> => {
 </script>
 
 <template>
-  <nav class="sticky top-0 z-50 border-b bg-background">
+  <nav class="sticky top-0 z-50 border-b bg-card/70 backdrop-blur">
     <div class="mx-auto flex h-16 w-full max-w-screen-3xl items-center justify-between px-4">
       <RouterLink
         to="/"
