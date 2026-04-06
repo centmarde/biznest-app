@@ -1,24 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Input } from '@/components/ui/input'
 import { TypographyH3, TypographyMuted, TypographySmall } from '@/components/typography'
-import { Search, ShieldCheck } from 'lucide-vue-next'
+import { ShieldCheck } from 'lucide-vue-next'
 
 const props = defineProps<{
   searchQuery: string
   totalRolesCount: number
-  activeRolesCount: number
-  systemRolesCount: number
 }>()
-
-const emit = defineEmits<{
-  (e: 'update:searchQuery', value: string): void
-}>()
-
-const searchQueryModel = computed({
-  get: () => props.searchQuery,
-  set: (value: string) => emit('update:searchQuery', value),
-})
 </script>
 
 <template>
@@ -35,28 +22,13 @@ const searchQueryModel = computed({
     </TypographyMuted>
 
     <div class="flex flex-col gap-3 mt-2 xl:flex-row xl:items-center">
-      <div class="relative w-full xl:max-w-md">
-        <Search class="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-        <Input class="pl-9" placeholder="Search role by name" v-model="searchQueryModel" />
+      <div class="rounded-md border bg-muted/20 px-3 py-2 w-full sm:w-1/3 xl:w-auto min-w-[150px]">
+        <TypographySmall as="p" class="text-muted-foreground uppercase">Roles</TypographySmall>
+        <p class="text-lg font-semibold">{{ props.totalRolesCount }}</p>
       </div>
 
       <div class="xl:ml-auto">
         <slot name="actions" />
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-      <div class="rounded-md border bg-muted/20 px-3 py-2">
-        <TypographySmall as="p" class="text-muted-foreground uppercase">Roles</TypographySmall>
-        <p class="text-lg font-semibold">{{ props.totalRolesCount }}</p>
-      </div>
-      <div class="rounded-md border bg-muted/20 px-3 py-2">
-        <TypographySmall as="p" class="text-muted-foreground uppercase">Active</TypographySmall>
-        <p class="text-lg font-semibold">{{ props.activeRolesCount }}</p>
-      </div>
-      <div class="rounded-md border bg-muted/20 px-3 py-2">
-        <TypographySmall as="p" class="text-muted-foreground uppercase">System</TypographySmall>
-        <p class="text-lg font-semibold">{{ props.systemRolesCount }}</p>
       </div>
     </div>
   </header>
