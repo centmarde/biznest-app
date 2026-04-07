@@ -1,32 +1,27 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import RolesHeader from '@/views/(admin)/roles/components/RolesHeader.vue'
 import RolesButtons from '@/views/(admin)/roles/components/RolesButtons.vue'
 import RolesModal from '@/views/(admin)/roles/components/RolesModal.vue'
 import RolesCards from '@/views/(admin)/roles/components/RolesCards.vue'
 import type { RoleRow } from '@/views/(admin)/roles/types/roles.types'
 import { getRoleCounts, filterRoleRows } from '@/views/(admin)/roles/utils/roles.utils'
-import { fetchRoles } from '@/services/roles.service'
+import { useRolesStore } from '@/stores/roles.store'
 
 const searchQuery = ref('')
 const addRoleModalOpen = ref(false)
 
-const rows = ref<RoleRow[]>([])
+const rolesStore = useRolesStore()
+const { roles } = storeToRefs(rolesStore)
+const { loadRoles } = rolesStore
 
-const roleCounts = computed(() => getRoleCounts(rows.value))
+const roleCounts = computed(() => getRoleCounts(roles.value))
 
-const filteredRows = computed<RoleRow[]>(() => filterRoleRows(rows.value, searchQuery.value))
+const filteredRows = computed<RoleRow[]>(() => filterRoleRows(roles.value, searchQuery.value))
 
 const openAddRoleModal = (): void => {
   addRoleModalOpen.value = true
-}
-
-const loadRoles = async (): Promise<void> => {
-  try {
-    rows.value = await fetchRoles()
-  } catch (error) {
-    console.error('Failed to load roles:', error)
-  }
 }
 
 const refreshRoles = async (): Promise<void> => {
@@ -34,10 +29,10 @@ const refreshRoles = async (): Promise<void> => {
 }
 
 const handleRoleCreated = (newRole: RoleRow): void => {
-  const alreadyExists = rows.value.some((role) => role.id === newRole.id)
+  const alreadyExists = roles.value.some((role) => role.id === newRole.id)
 
   if (!alreadyExists) {
-    rows.value = [...rows.value, newRole].sort((a, b) => a.title.localeCompare(b.title))
+    roles.value = [...roles.value, newRole].sort((a, b) => a.title.localeCompare(b.title))
   }
 
   // Keep optimistic UI instant, then sync with server state in the background.
