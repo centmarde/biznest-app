@@ -12,6 +12,18 @@ import {
 import { computed, onMounted, ref, watch, type Component } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { TypographyLarge, TypographyMuted, TypographySmall } from '@/components/typography'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarTrigger,
+} from '@/components/ui/sidebar'
 import { fetchAllowedPagePathsForRoleTitle } from '@/services/roles.service'
 import { useAuthStore } from '@/stores/auth.store'
 import type { AdminSidebarIconName } from '@/types/admin-sidebar.types'
@@ -95,60 +107,67 @@ watch(
 </script>
 
 <template>
-  <aside class="hidden w-72 shrink-0 border-r bg-card/70 md:block">
-    <div class="flex h-full flex-col">
-      <div class="border-b px-6 py-5">
-        <TypographyLarge as="h2" class="text-base tracking-wide">Admin Panel</TypographyLarge>
-        <TypographyMuted as="p" class="mt-1 text-xs">Manage your operations</TypographyMuted>
+  <Sidebar collapsible="icon" class="border-r bg-card/70 md:top-16 md:h-[calc(100svh-4rem)]">
+    <SidebarHeader class="border-b px-3 py-3">
+      <div class="flex items-start justify-between gap-2">
+        <div class="group-data-[collapsible=icon]:hidden">
+          <TypographyLarge as="h2" class="text-base tracking-wide">Admin Panel</TypographyLarge>
+          <TypographyMuted as="p" class="mt-1 text-xs">Manage your operations</TypographyMuted>
+        </div>
+        <SidebarTrigger class="mt-0.5" />
       </div>
+    </SidebarHeader>
 
-      <nav class="flex-1 space-y-6 px-4 py-5">
-        <section>
-          <TypographySmall
-            as="p"
-            class="px-2 pb-2 text-xs tracking-wider text-foreground/60 uppercase"
-          >
-            Overview
-          </TypographySmall>
-          <ul class="space-y-1">
-            <li v-for="item in visiblePrimaryAdminNavItems" :key="item.to">
-              <RouterLink
-                :to="item.to"
-                class="focus-visible:ring-ring flex items-center gap-3 rounded-md px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+    <SidebarContent class="px-2 py-4">
+      <SidebarGroup>
+        <SidebarGroupLabel as="p" class="px-2 text-xs tracking-wider uppercase">
+          Overview
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem v-for="item in visiblePrimaryAdminNavItems" :key="item.to">
+              <SidebarMenuButton
+                as-child
+                :is-active="isActive(item.to)"
+                :tooltip="item.label"
                 :class="getNavItemClass(item.to)"
               >
-                <component :is="iconMap[item.icon]" class="h-4 w-4 shrink-0" />
-                <TypographySmall as="span" class="text-sm text-inherit">{{
-                  item.label
-                }}</TypographySmall>
-              </RouterLink>
-            </li>
-          </ul>
-        </section>
+                <RouterLink :to="item.to" class="focus-visible:ring-ring focus-visible:ring-2">
+                  <component :is="iconMap[item.icon]" class="h-4 w-4 shrink-0" />
+                  <TypographySmall as="span" class="text-sm text-inherit">{{
+                    item.label
+                  }}</TypographySmall>
+                </RouterLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
 
-        <section>
-          <TypographySmall
-            as="p"
-            class="px-2 pb-2 text-xs tracking-wider text-foreground/60 uppercase"
-          >
-            Administration
-          </TypographySmall>
-          <ul class="space-y-1">
-            <li v-for="item in visibleManagementAdminNavItems" :key="item.to">
-              <RouterLink
-                :to="item.to"
-                class="focus-visible:ring-ring flex items-center gap-3 rounded-md px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+      <SidebarGroup>
+        <SidebarGroupLabel as="p" class="px-2 text-xs tracking-wider uppercase">
+          Administration
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem v-for="item in visibleManagementAdminNavItems" :key="item.to">
+              <SidebarMenuButton
+                as-child
+                :is-active="isActive(item.to)"
+                :tooltip="item.label"
                 :class="getNavItemClass(item.to)"
               >
-                <component :is="iconMap[item.icon]" class="h-4 w-4 shrink-0" />
-                <TypographySmall as="span" class="text-sm text-inherit">{{
-                  item.label
-                }}</TypographySmall>
-              </RouterLink>
-            </li>
-          </ul>
-        </section>
-      </nav>
-    </div>
-  </aside>
+                <RouterLink :to="item.to" class="focus-visible:ring-ring focus-visible:ring-2">
+                  <component :is="iconMap[item.icon]" class="h-4 w-4 shrink-0" />
+                  <TypographySmall as="span" class="text-sm text-inherit">{{
+                    item.label
+                  }}</TypographySmall>
+                </RouterLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    </SidebarContent>
+  </Sidebar>
 </template>
