@@ -1,67 +1,42 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import ActionButtons from '@/views/(admin)/users/components/ActionButtons.vue'
 import Header from '@/views/(admin)/users/components/UsersHeader.vue'
 import UsersTable from '@/views/(admin)/users/components/UsersTable.vue'
 import AddUserModal from '@/views/(admin)/users/components/AddUserModal.vue'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
-import { fetchAllUsers } from '@/services/users.service'
-import type { UserRoleFilter, UserRow } from '@/views/(admin)/users/types/users-table.types'
-import {
-  filterUserRows,
-  getUserRoleCounts,
-  exportUsersToCsv,
-  parseUsersCsv,
-} from '@/views/(admin)/users/utils/users-table.utils'
+import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
+import { useUsersStore } from '@/stores/users.store'
 
-const rows = ref<UserRow[]>([])
-const isLoadingUsers = ref(false)
-const usersError = ref<string | null>(null)
-const searchQuery = ref('')
-const roleFilter = ref<UserRoleFilter>('all')
-const addUserModalOpen = ref(false)
+const usersStore = useUsersStore()
 
-const getErrorMessage = (error: unknown): string => {
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
+const {
+  usersError,
+  isLoadingUsers,
+  searchQuery,
+  roleFilter,
+  addUserModalOpen,
+  filteredRows,
+  roleCounts,
+} = storeToRefs(usersStore)
 
-  return 'Unable to load users right now.'
-}
-
-const loadUsers = async (): Promise<void> => {
-  isLoadingUsers.value = true
-  usersError.value = null
-
-  try {
-    rows.value = await fetchAllUsers()
-  } catch (error) {
-    rows.value = []
-    usersError.value = getErrorMessage(error)
-  } finally {
-    isLoadingUsers.value = false
-  }
-}
-
-const filteredRows = computed<UserRow[]>(() =>
-  filterUserRows(rows.value, searchQuery.value, roleFilter.value),
-)
-
-const roleCounts = computed(() => getUserRoleCounts(rows.value))
+const {
+  loadUsers,
+  exportFilteredRowsToCsv,
+  importUsersFromCsv,
+  setAddUserModalOpen,
+  removeUserLocally,
+  upsertUser,
+} = usersStore
 
 const handleExportCsv = () => {
-  exportUsersToCsv(filteredRows.value)
+  exportFilteredRowsToCsv()
 }
 
 const handleImportCsv = async (file: File) => {
   try {
-    const newRows = await parseUsersCsv(file)
-    if (newRows.length > 0) {
-      // Basic implementation for mock/preview: append unique rows by id
-      const existingIds = new Set(rows.value.map((r) => r.id))
-      const uniqueNewRows = newRows.filter((r) => !existingIds.has(r.id))
-      rows.value = [...rows.value, ...uniqueNewRows]
-    }
+    await importUsersFromCsv(file)
   } catch (error) {
     console.error('Failed to parse CSV', error)
     usersError.value = 'Failed to read the imported CSV.'
@@ -69,7 +44,15 @@ const handleImportCsv = async (file: File) => {
 }
 
 const handleAddUser = () => {
-  addUserModalOpen.value = true
+  setAddUserModalOpen(true)
+}
+
+const handleUserDeleted = (id: string) => {
+  removeUserLocally(id)
+}
+
+const handleUserUpdated = (user: UserRow) => {
+  upsertUser(user)
 }
 
 onMounted(() => {
@@ -106,13 +89,8 @@ onMounted(() => {
     <UsersTable
       :rows="filteredRows"
       @refresh="loadUsers"
-      @user-deleted="(id) => (rows = rows.filter((r) => r.id !== id))"
-      @user-updated="
-        (user) => {
-          const idx = rows.findIndex((r) => r.id === user.id)
-          if (idx !== -1) rows[idx] = user
-        }
-      "
+      @user-deleted="handleUserDeleted"
+      @user-updated="handleUserUpdated"
     />
 
     <AddUserModal v-model:isOpen="addUserModalOpen" />
