@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -20,6 +20,8 @@ import {
 import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
 import { updateUserProfile } from '@/services/users.service'
 import { useAlertContext } from '@/composables/useAlert'
+import { fetchPhilippineCities } from '@/services/cities.service'
+import type { CityOption } from '@/services/cities.service'
 import { Loader2 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -38,20 +40,53 @@ const { showSuccess, showAlert } = useAlertContext()
 const username = ref('')
 const email = ref('')
 const role = ref('user')
-const city = ref('')
+const cityId = ref('')
+const legacyCityName = ref('')
 const isLoading = ref(false)
 
-const PHILIPPINE_CITIES = ref<string[]>([])
+const PHILIPPINE_CITIES = ref<CityOption[]>([])
 const isFetchingCities = ref(false)
+
+const selectedCityName = computed(() => {
+  if (!cityId.value) {
+    return legacyCityName.value
+  }
+
+  return PHILIPPINE_CITIES.value.find((city) => city.id === cityId.value)?.name ?? cityId.value
+})
+
+const syncCityIdFromUser = (user: UserRow | null): void => {
+  if (!user) {
+    cityId.value = ''
+    legacyCityName.value = ''
+    return
+  }
+
+  if (user.cityId) {
+    cityId.value = user.cityId
+    legacyCityName.value = ''
+    return
+  }
+
+  if (user.city) {
+    const matchingCity = PHILIPPINE_CITIES.value.find(
+      (option) => option.name.toLowerCase() === user.city.toLowerCase(),
+    )
+    cityId.value = matchingCity?.id ?? ''
+    legacyCityName.value = matchingCity ? '' : user.city
+    return
+  }
+
+  cityId.value = ''
+  legacyCityName.value = ''
+}
 
 const fetchCities = async () => {
   if (PHILIPPINE_CITIES.value.length > 0) return
   try {
     isFetchingCities.value = true
-    const response = await fetch('https://psgc.gitlab.io/api/cities')
-    if (!response.ok) throw new Error('Failed to fetch cities')
-    const data = await response.json()
-    PHILIPPINE_CITIES.value = data.map((c: { name: string }) => c.name).sort()
+    PHILIPPINE_CITIES.value = await fetchPhilippineCities()
+    syncCityIdFromUser(props.user)
   } catch (error) {
     console.error('Error fetching cities:', error)
   } finally {
@@ -76,12 +111,12 @@ watch(
       username.value = user.username
       email.value = user.email
       role.value = user.role.toLowerCase()
-      city.value = user.city || ''
+      syncCityIdFromUser(user)
     } else {
       username.value = ''
       email.value = ''
       role.value = 'user'
-      city.value = ''
+      cityId.value = ''
     }
   },
   { immediate: true },
@@ -92,15 +127,23 @@ const closeModal = () => {
   emit('update:isOpen', false)
 }
 
+const selectCity = (nextCityId: string): void => {
+  cityId.value = nextCityId
+  legacyCityName.value = ''
+}
+
 const saveChanges = async () => {
   if (!props.user) return
+
+  const resolvedCityId = cityId.value || props.user.cityId || ''
+  const shouldUpdateCityId = resolvedCityId.length > 0
 
   try {
     isLoading.value = true
     await updateUserProfile(props.user.id, {
       username: username.value,
       role: role.value,
-      city: city.value,
+      cityId: shouldUpdateCityId ? resolvedCityId : undefined,
     })
 
     // Fast local update
@@ -108,7 +151,8 @@ const saveChanges = async () => {
       ...props.user,
       username: username.value,
       role: role.value,
-      city: city.value,
+      city: selectedCityName.value || props.user.city,
+      cityId: resolvedCityId || undefined,
     })
 
     emit('update:isOpen', false)
@@ -185,10 +229,10 @@ const saveChanges = async () => {
                 id="city"
                 variant="outline"
                 class="w-full justify-start font-normal"
-                :class="!city && 'text-muted-foreground'"
+                :class="!cityId && 'text-muted-foreground'"
                 :disabled="isLoading"
               >
-                {{ city ? city : 'Select a city' }}
+                {{ selectedCityName ? selectedCityName : 'Select a city' }}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" class="w-[375px] max-h-[300px] overflow-y-auto">
@@ -201,8 +245,12 @@ const saveChanges = async () => {
                 Loading cities...
               </TypographyMuted>
               <template v-else>
-                <DropdownMenuItem v-for="c in PHILIPPINE_CITIES" :key="c" @click="city = c">
-                  {{ c }}
+                <DropdownMenuItem
+                  v-for="c in PHILIPPINE_CITIES"
+                  :key="c.id"
+                  @click="selectCity(c.id)"
+                >
+                  {{ c.name }}
                 </DropdownMenuItem>
               </template>
             </DropdownMenuContent>
