@@ -1,5 +1,6 @@
 import type { UserRow, RawUserMetaData } from '@/views/(admin)/users/types/users-table.types'
 import { getSupabaseClient } from '@/services/supabase.client'
+import { fetchPhilippineCities, toCityNameMap } from '@/services/cities.service'
 
 type GenericDbRow = Record<string, unknown>
 
@@ -48,7 +49,69 @@ const normalizeRole = (value: string): string => {
   return 'user'
 }
 
-const toUserRow = (input: unknown): UserRow | null => {
+const getOptionalText = (value: unknown): string | null => {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value.trim()
+  }
+
+  if (typeof value === 'number') {
+    return String(value)
+  }
+
+  return null
+}
+
+const isLikelyCityId = (value: string): boolean => /^\d{4,}$/.test(value)
+
+const getCityMetadata = (
+  meta: RawUserMetaData,
+): {
+  cityId: string
+  cityName: string
+} => {
+  const cityIdFromDedicatedField = getOptionalText(meta.city_id ?? meta.cityId) ?? ''
+  const cityNameFromDedicatedField = getOptionalText(meta.city_name ?? meta.cityName) ?? ''
+  const cityFromLegacyField = getOptionalText(meta.city) ?? ''
+
+  if (cityIdFromDedicatedField) {
+    return {
+      cityId: cityIdFromDedicatedField,
+      cityName: cityNameFromDedicatedField,
+    }
+  }
+
+  if (cityFromLegacyField && isLikelyCityId(cityFromLegacyField)) {
+    return {
+      cityId: cityFromLegacyField,
+      cityName: cityNameFromDedicatedField,
+    }
+  }
+
+  return {
+    cityId: '',
+    cityName: cityNameFromDedicatedField || cityFromLegacyField,
+  }
+}
+
+const toRawUserMetaData = (input: unknown): RawUserMetaData => {
+  if (typeof input === 'string') {
+    try {
+      const parsed = JSON.parse(input) as RawUserMetaData
+      return parsed
+    } catch {
+      console.error('Failed to parse raw_user_meta_data JSON')
+      return {}
+    }
+  }
+
+  if (typeof input === 'object' && input !== null) {
+    return input as RawUserMetaData
+  }
+
+  return {}
+}
+
+const toUserRow = (input: unknown, cityNameById: Map<string, string>): UserRow | null => {
   const row = asRecord(input)
 
   const id = getText(row, ['id', 'user_id'])
@@ -59,44 +122,34 @@ const toUserRow = (input: unknown): UserRow | null => {
   let username = 'Unknown User'
   let email = 'No email'
   let role = 'user'
-  let city = ''
+  const meta = toRawUserMetaData(row['raw_user_meta_data'])
+  username = meta.username || username
+  email = meta.email || email
+  role = normalizeRole(meta.role || role)
 
-  // Extract from raw_user_meta_data JSONB column if present
-  const rawMeta = row['raw_user_meta_data']
-  if (typeof rawMeta === 'string') {
-    try {
-      const meta: RawUserMetaData = JSON.parse(rawMeta)
-      username = meta.username || username
-      email = meta.email || email
-      role = normalizeRole(meta.role || role)
-      city = meta.city || city
-    } catch {
-      // Log error for debugging
-      console.error('Failed to parse raw_user_meta_data JSON')
-    }
-  } else if (typeof rawMeta === 'object' && rawMeta !== null) {
-    // If already parsed (from Supabase client)
-    username = (rawMeta as RawUserMetaData).username || username
-    email = (rawMeta as RawUserMetaData).email || email
-    role = normalizeRole((rawMeta as RawUserMetaData).role || role)
-    city = (rawMeta as RawUserMetaData).city || city
-  }
+  const cityMeta = getCityMetadata(meta)
+  const cityName = cityMeta.cityId
+    ? cityNameById.get(cityMeta.cityId) || cityMeta.cityName || cityMeta.cityId
+    : cityMeta.cityName
 
   return {
     id,
     username,
     email,
     role,
-    city,
+    city: cityName,
+    cityId: cityMeta.cityId || undefined,
   }
 }
 
-const mapRows = (rows: unknown[] | null): UserRow[] => {
+const mapRows = (rows: unknown[] | null, cityNameById: Map<string, string>): UserRow[] => {
   if (!rows) {
     return []
   }
 
-  return rows.map(toUserRow).filter((row): row is UserRow => row !== null)
+  return rows
+    .map((row) => toUserRow(row, cityNameById))
+    .filter((row): row is UserRow => row !== null)
 }
 
 const shouldFallbackFromRpc = (error: { code?: string; message?: string } | null): boolean => {
@@ -110,11 +163,18 @@ const shouldFallbackFromRpc = (error: { code?: string; message?: string } | null
 
 export const fetchAllUsers = async (): Promise<UserRow[]> => {
   const supabase = getSupabaseClient()
+  let cityNameById = new Map<string, string>()
+
+  try {
+    cityNameById = toCityNameMap(await fetchPhilippineCities())
+  } catch {
+    cityNameById = new Map<string, string>()
+  }
 
   const { data: rpcData, error: rpcError } = await supabase.rpc(GET_ALL_USERS_RPC)
 
   if (!rpcError) {
-    return mapRows(Array.isArray(rpcData) ? rpcData : null)
+    return mapRows(Array.isArray(rpcData) ? rpcData : null, cityNameById)
   }
 
   if (!shouldFallbackFromRpc(rpcError)) {
@@ -130,14 +190,32 @@ export const fetchAllUsers = async (): Promise<UserRow[]> => {
     throw new Error(getErrorMessage(profilesError))
   }
 
-  return mapRows(Array.isArray(profilesData) ? profilesData : null)
+  return mapRows(Array.isArray(profilesData) ? profilesData : null, cityNameById)
 }
 
 export const updateUserProfile = async (
   userId: string,
-  updates: { username?: string; role?: string; city?: string },
+  updates: { username?: string; role?: string; cityId?: string },
 ): Promise<void> => {
   const supabase = getSupabaseClient()
+  const metadataUpdates: Record<string, string> = {}
+
+  if (updates.username !== undefined) {
+    metadataUpdates.username = updates.username
+  }
+
+  if (updates.role !== undefined) {
+    metadataUpdates.role = updates.role
+  }
+
+  if (updates.cityId !== undefined) {
+    metadataUpdates.city = updates.cityId
+    metadataUpdates.city_id = updates.cityId
+  }
+
+  if (Object.keys(metadataUpdates).length === 0) {
+    return
+  }
 
   // Since we don't have direct access to auth.admin, calling an RPC is the best practice
   // if you have `update_user_admin` set up. Otherwise, this might act as a placeholder.
@@ -146,7 +224,7 @@ export const updateUserProfile = async (
 
   const { error } = await supabase.rpc('update_user_metadata_rpc', {
     target_user_id: userId,
-    meta_updates: updates,
+    meta_updates: metadataUpdates,
   })
 
   if (error) {
@@ -154,7 +232,7 @@ export const updateUserProfile = async (
     // (though usually denied by default, it works if using service role on backend)
     const { error: directError } = await supabase.auth.admin
       .updateUserById(userId, {
-        user_metadata: updates,
+        user_metadata: metadataUpdates,
       })
       .catch(() => ({ error: { message: 'Admin API not available on client' } }))
 

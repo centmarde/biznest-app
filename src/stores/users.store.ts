@@ -90,7 +90,7 @@ export const useUsersStore = defineStore('users', () => {
 
   const updateUser = async (
     userId: string,
-    updates: { username?: string; role?: string; city?: string },
+    updates: { username?: string; role?: string; city?: string; cityId?: string },
   ): Promise<void> => {
     try {
       await updateUserProfile(userId, updates)
@@ -102,6 +102,7 @@ export const useUsersStore = defineStore('users', () => {
           username: updates.username ?? existingUser.username,
           role: updates.role ?? existingUser.role,
           city: updates.city ?? existingUser.city,
+          cityId: updates.cityId ?? existingUser.cityId,
         })
       }
 
