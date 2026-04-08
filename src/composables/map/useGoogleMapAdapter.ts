@@ -1,5 +1,6 @@
 import type { Ref } from 'vue'
 import type { BarangayFeatureCollection } from '@/types/map.types'
+import type { Hazard } from '@/types/hazard.types'
 import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
 import type {
   GoogleInfoWindowInstance,
@@ -42,6 +43,9 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
   let googleMap: GoogleMapInstance | null = null
   let googleBarangayPolygons: GooglePolygonInstance[] = []
   let googleMappedZonePolygons: GooglePolygonInstance[] = []
+  let googleHazardPolygons: GooglePolygonInstance[] = []
+  let googleHazardPolylines: GooglePolylineInstance[] = []
+  let googleHazardMarkers: GoogleMarkerInstance[] = []
   let googleBarangayInfoWindow: GoogleInfoWindowInstance | null = null
   let googleDrawPreviewPolygon: GooglePolygonInstance | null = null
   let googleDrawPreviewPolyline: GooglePolylineInstance | null = null
@@ -77,6 +81,15 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
   function destroyGoogleMappedZonePolygons(): void {
     googleMappedZonePolygons.forEach((polygon) => polygon.setMap(null))
     googleMappedZonePolygons = []
+  }
+
+  function destroyGoogleHazards(): void {
+    googleHazardPolygons.forEach((polygon) => polygon.setMap(null))
+    googleHazardPolylines.forEach((polyline) => polyline.setMap(null))
+    googleHazardMarkers.forEach((marker) => marker.setMap(null))
+    googleHazardPolygons = []
+    googleHazardPolylines = []
+    googleHazardMarkers = []
   }
 
   function destroyGoogleDrawPreview(): void {
@@ -115,6 +128,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
   function destroy(): void {
     destroyGoogleBarangayPolygons()
     destroyGoogleMappedZonePolygons()
+    destroyGoogleHazards()
     destroyGoogleDrawPreview()
     clearGoogleMapClickListener()
 
@@ -306,6 +320,76 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     }
   }
 
+  async function renderHazards(showHazards: boolean, hazards: Hazard[]): Promise<void> {
+    destroyGoogleHazards()
+
+    if (!googleMap || !showHazards || hazards.length === 0) {
+      return
+    }
+
+    const googleMaps = (window as GoogleWindow).google?.maps
+    if (!googleMaps) {
+      return
+    }
+
+    const MarkerCtor = googleMaps.Marker
+    const PolygonCtor = googleMaps.Polygon
+    const PolylineCtor = googleMaps.Polyline
+
+    hazards.forEach((hazard) => {
+      if (hazard.geometry.type === 'Point' && MarkerCtor) {
+        const [lng, lat] = hazard.geometry.coordinates
+
+        const marker = new MarkerCtor({
+          position: { lat, lng },
+          map: googleMap as GoogleMapInstance,
+          title: hazard.name,
+          icon: {
+            path: 'M 0,0 m -5,0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0',
+            fillColor: '#ef4444',
+            fillOpacity: 1,
+            strokeColor: '#7f1d1d',
+            strokeOpacity: 1,
+            strokeWeight: 1,
+            scale: 1,
+          },
+        })
+
+        googleHazardMarkers.push(marker)
+        return
+      }
+
+      if (hazard.geometry.type === 'LineString' && PolylineCtor) {
+        const polyline = new PolylineCtor({
+          path: hazard.geometry.coordinates.map((point) => ({ lat: point[1], lng: point[0] })),
+          strokeColor: '#f97316',
+          strokeOpacity: 1,
+          strokeWeight: 3,
+          map: googleMap as GoogleMapInstance,
+        })
+
+        googleHazardPolylines.push(polyline)
+        return
+      }
+
+      if (hazard.geometry.type === 'Polygon' && PolygonCtor) {
+        const polygon = new PolygonCtor({
+          paths: hazard.geometry.coordinates.map((ring) =>
+            ring.map((point) => ({ lat: point[1], lng: point[0] })),
+          ),
+          strokeColor: '#ef4444',
+          strokeOpacity: 1,
+          strokeWeight: 2,
+          fillColor: '#ef4444',
+          fillOpacity: 0.2,
+          map: googleMap as GoogleMapInstance,
+        })
+
+        googleHazardPolygons.push(polygon)
+      }
+    })
+  }
+
   function setMapClickHandler(handler: MapClickHandler | null): void {
     mapClickHandler = handler
     syncGoogleMapClickListener()
@@ -388,6 +472,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     destroy,
     renderBarangayBorders,
     renderMappedZones,
+    renderHazards,
     renderDrawPreview,
     setMapClickHandler,
     setDrawMode,

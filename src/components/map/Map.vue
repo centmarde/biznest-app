@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { BarangayFeatureCollection, MapProvider } from '@/types/map.types'
+import type { Hazard } from '@/types/hazard.types'
 import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
 import { useGoogleMapAdapter } from '@/composables/map/useGoogleMapAdapter'
 import { useLeafletMapAdapter } from '@/composables/map/useLeafletMapAdapter'
@@ -18,6 +19,9 @@ const props = withDefaults(
     showBarangayBorders?: boolean
     barangayBorders?: BarangayFeatureCollection | null
     mappedZones?: MappedZone[]
+    hazards?: Hazard[]
+    showHazards?: boolean
+    selectedHazardId?: string | null
     selectedMappedZoneId?: string | null
     drawPoints?: MapDrawPoint[]
     isDrawMode?: boolean
@@ -27,6 +31,9 @@ const props = withDefaults(
     showBarangayBorders: false,
     barangayBorders: null,
     mappedZones: () => [],
+    hazards: () => [],
+    showHazards: false,
+    selectedHazardId: null,
     selectedMappedZoneId: null,
     drawPoints: () => [],
     isDrawMode: false,
@@ -105,6 +112,14 @@ watch(
 )
 
 watch(
+  () => [props.showHazards, props.hazards],
+  async () => {
+    await renderHazardsForActiveProvider()
+  },
+  { deep: true },
+)
+
+watch(
   () => props.drawPoints,
   async () => {
     await renderDrawPreviewForActiveProvider()
@@ -116,6 +131,14 @@ watch(
   () => [props.selectedMappedZoneId, props.mappedZones],
   async () => {
     await focusSelectedMappedZoneForActiveProvider()
+  },
+  { deep: true },
+)
+
+watch(
+  () => [props.selectedHazardId, props.hazards, props.showHazards],
+  async () => {
+    await focusSelectedHazardForActiveProvider()
   },
   { deep: true },
 )
@@ -159,6 +182,15 @@ async function renderMappedZonesForActiveProvider(): Promise<void> {
   await googleMapAdapter.renderMappedZones(props.mappedZones)
 }
 
+async function renderHazardsForActiveProvider(): Promise<void> {
+  if (props.provider === 'leaflet') {
+    await leafletMapAdapter.renderHazards(Boolean(props.showHazards), props.hazards)
+    return
+  }
+
+  await googleMapAdapter.renderHazards(Boolean(props.showHazards), props.hazards)
+}
+
 async function renderDrawPreviewForActiveProvider(): Promise<void> {
   if (props.provider === 'leaflet') {
     await leafletMapAdapter.renderDrawPreview(props.drawPoints)
@@ -184,6 +216,44 @@ async function focusSelectedMappedZoneForActiveProvider(): Promise<void> {
   }
 
   await googleMapAdapter.focusOnZone(selectedZone.points)
+}
+
+function getHazardFocusPoints(hazard: Hazard): MapDrawPoint[] {
+  if (hazard.geometry.type === 'Point') {
+    const [lng, lat] = hazard.geometry.coordinates
+    return [{ lat, lng }]
+  }
+
+  if (hazard.geometry.type === 'LineString') {
+    return hazard.geometry.coordinates.map((point) => ({ lat: point[1], lng: point[0] }))
+  }
+
+  return hazard.geometry.coordinates.flatMap((ring) =>
+    ring.map((point) => ({ lat: point[1], lng: point[0] })),
+  )
+}
+
+async function focusSelectedHazardForActiveProvider(): Promise<void> {
+  if (!props.showHazards || !props.selectedHazardId) {
+    return
+  }
+
+  const selectedHazard = props.hazards.find((hazard) => hazard.id === props.selectedHazardId)
+  if (!selectedHazard) {
+    return
+  }
+
+  const focusPoints = getHazardFocusPoints(selectedHazard)
+  if (focusPoints.length === 0) {
+    return
+  }
+
+  if (props.provider === 'leaflet') {
+    await leafletMapAdapter.focusOnZone(focusPoints)
+    return
+  }
+
+  await googleMapAdapter.focusOnZone(focusPoints)
 }
 
 function syncMapClickHandlerForActiveProvider(): void {
@@ -236,8 +306,10 @@ async function initProviderMap() {
     await leafletMapAdapter.init()
     await renderBarangayBordersForActiveProvider()
     await renderMappedZonesForActiveProvider()
+    await renderHazardsForActiveProvider()
     await renderDrawPreviewForActiveProvider()
     await focusSelectedMappedZoneForActiveProvider()
+    await focusSelectedHazardForActiveProvider()
     syncDrawModeForActiveProvider()
     syncMapClickHandlerForActiveProvider()
     syncDrawPointMoveHandlerForActiveProvider()
@@ -248,8 +320,10 @@ async function initProviderMap() {
     await googleMapAdapter.init()
     await renderBarangayBordersForActiveProvider()
     await renderMappedZonesForActiveProvider()
+    await renderHazardsForActiveProvider()
     await renderDrawPreviewForActiveProvider()
     await focusSelectedMappedZoneForActiveProvider()
+    await focusSelectedHazardForActiveProvider()
     syncDrawModeForActiveProvider()
     syncMapClickHandlerForActiveProvider()
     syncDrawPointMoveHandlerForActiveProvider()

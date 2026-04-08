@@ -1,10 +1,10 @@
-
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Layers, PenTool } from 'lucide-vue-next'
+import { Layers, PenTool, TriangleAlert } from 'lucide-vue-next'
 import Map from '@/components/map/Map.vue'
 import { useBarangayBorders } from '@/composables/map/useBarangayBorders'
 import AdminMapRightSidebar from '@/views/(admin)/map/components/AdminMapRightSidebar.vue'
+import AdminMapHazardSidebar from '@/views/(admin)/map/components/AdminMapHazardSidebar.vue'
 import MappedZoneFormModal from '@/views/(admin)/map/components/MappedZoneFormModal.vue'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -20,6 +20,12 @@ import {
   updateMappedZone,
   updateZoningLayer,
 } from '@/services/zoning/zoning.service'
+import {
+  createHazard,
+  deleteHazard,
+  listHazards,
+  updateHazard,
+} from '@/services/hazard/hazard.service'
 import type {
   CreateMappedZoneInput,
   CreateZoningLayerInput,
@@ -29,10 +35,17 @@ import type {
   UpdateZoningLayerInput,
   ZoningLayer,
 } from '@/types/zoning.types'
+import type {
+  CreateHazardInput,
+  Hazard,
+  HazardId,
+  UpdateHazardInput,
+} from '@/types/hazard.types'
 
 const provider = ref<'google' | 'leaflet'>('leaflet')
 const showBarangayBorders = ref(false)
 const isSidebarOpen = ref(false)
+const isHazardSidebarOpen = ref(false)
 const isSavingLayer = ref(false)
 const isSavingMappedZone = ref(false)
 const isDrawMode = ref(false)
@@ -41,6 +54,14 @@ const showMappedZoneModal = ref(false)
 const selectedMappedZoneId = ref<string | null>(null)
 const zoningLayers = ref<ZoningLayer[]>([])
 const mappedZones = ref<MappedZone[]>([])
+const hazards = ref<Hazard[]>([])
+const isLoadingHazards = ref(false)
+const isSavingHazard = ref(false)
+const hazardError = ref('')
+const selectedHazardId = ref<HazardId | null>(null)
+const hazardsEnabled = ref(false)
+const hasLoadedHazards = ref(false)
+
 const zoningError = ref('')
 
 const isSidebarSubmitting = computed(() => isSavingLayer.value || isSavingMappedZone.value)
@@ -60,8 +81,7 @@ const visibleMappedZones = computed(() => {
 const { barangayBorders, isLoading, errorMessage, loadBarangayBorders } = useBarangayBorders()
 
 onMounted(async () => {
-  await loadZoningLayers()
-  await loadMappedZones()
+  await Promise.all([loadZoningLayers(), loadMappedZones()])
 })
 
 async function toggleBarangayBorders() {
@@ -88,6 +108,35 @@ async function loadMappedZones(): Promise<void> {
   } catch (error) {
     zoningError.value = error instanceof Error ? error.message : 'Failed to load mapped zones.'
   }
+}
+
+async function loadHazards(force = false): Promise<void> {
+  if (hasLoadedHazards.value && !force) {
+    return
+  }
+
+  isLoadingHazards.value = true
+  hazardError.value = ''
+
+  try {
+    const response = await listHazards({
+      page: 1,
+      pageSize: 100,
+      sortBy: 'created_at',
+      sortOrder: 'desc',
+    })
+
+    hazards.value = response.data
+    hasLoadedHazards.value = true
+  } catch (error) {
+    hazardError.value = error instanceof Error ? error.message : 'Failed to load hazards.'
+  } finally {
+    isLoadingHazards.value = false
+  }
+}
+
+async function ensureHazardsLoaded(): Promise<void> {
+  await loadHazards(false)
 }
 
 async function handleCreateLayer(payload: CreateZoningLayerInput): Promise<void> {
@@ -313,6 +362,76 @@ async function handleDeleteMappedZone(zoneId: string): Promise<void> {
 function handleFocusMappedZone(zoneId: string): void {
   selectedMappedZoneId.value = zoneId
 }
+
+async function handleToggleHazardsEnabled(enabled: boolean): Promise<void> {
+  hazardsEnabled.value = enabled
+
+  if (enabled) {
+    await ensureHazardsLoaded()
+  }
+}
+
+function handleSelectHazard(hazardId: HazardId): void {
+  selectedHazardId.value = hazardId
+}
+
+async function handleCreateHazard(input: CreateHazardInput): Promise<void> {
+  isSavingHazard.value = true
+  hazardError.value = ''
+
+  try {
+    const createdHazard = await createHazard(input)
+    hazards.value = [createdHazard, ...hazards.value]
+    hasLoadedHazards.value = true
+    hazardsEnabled.value = true
+    selectedHazardId.value = createdHazard.id
+  } catch (error) {
+    hazardError.value = error instanceof Error ? error.message : 'Failed to create hazard.'
+  } finally {
+    isSavingHazard.value = false
+  }
+}
+
+async function handleUpdateHazard(payload: {
+  hazardId: HazardId
+  input: UpdateHazardInput
+}): Promise<void> {
+  isSavingHazard.value = true
+  hazardError.value = ''
+
+  try {
+    const updatedHazard = await updateHazard(payload.hazardId, payload.input)
+    hazards.value = hazards.value.map((hazard) => {
+      if (hazard.id !== updatedHazard.id) {
+        return hazard
+      }
+
+      return updatedHazard
+    })
+  } catch (error) {
+    hazardError.value = error instanceof Error ? error.message : 'Failed to update hazard.'
+  } finally {
+    isSavingHazard.value = false
+  }
+}
+
+async function handleDeleteHazard(hazardId: HazardId): Promise<void> {
+  isSavingHazard.value = true
+  hazardError.value = ''
+
+  try {
+    await deleteHazard(hazardId)
+    hazards.value = hazards.value.filter((hazard) => hazard.id !== hazardId)
+
+    if (selectedHazardId.value === hazardId) {
+      selectedHazardId.value = null
+    }
+  } catch (error) {
+    hazardError.value = error instanceof Error ? error.message : 'Failed to delete hazard.'
+  } finally {
+    isSavingHazard.value = false
+  }
+}
 </script>
 
 <template>
@@ -348,6 +467,9 @@ function handleFocusMappedZone(zoneId: string): void {
         :show-barangay-borders="showBarangayBorders"
         :barangay-borders="barangayBorders"
         :mapped-zones="visibleMappedZones"
+        :hazards="hazards"
+        :show-hazards="hazardsEnabled"
+        :selected-hazard-id="selectedHazardId"
         :selected-mapped-zone-id="selectedMappedZoneId"
         :draw-points="drawPoints"
         :is-draw-mode="isDrawMode"
@@ -357,12 +479,38 @@ function handleFocusMappedZone(zoneId: string): void {
 
       <Button
         variant="secondary"
+        class="absolute right-30 top-3 z-9998"
+        @click="isHazardSidebarOpen = true"
+      >
+        <TriangleAlert class="h-4 w-4" />
+        <TypographySmall as="span">Hazards</TypographySmall>
+      </Button>
+
+      <Button
+        variant="secondary"
         class="absolute right-3 top-3 z-9998"
         @click="isSidebarOpen = true"
       >
         <Layers class="h-4 w-4" />
         <TypographySmall as="span">Layers</TypographySmall>
       </Button>
+
+      <AdminMapHazardSidebar
+        :is-open="isHazardSidebarOpen"
+        :hazards="hazards"
+        :is-enabled="hazardsEnabled"
+        :is-loading="isLoadingHazards"
+        :is-submitting="isSavingHazard"
+        :error-message="hazardError"
+        :selected-hazard-id="selectedHazardId"
+        @close="isHazardSidebarOpen = false"
+        @refresh="loadHazards(true)"
+        @toggle-enabled="handleToggleHazardsEnabled"
+        @select-hazard="handleSelectHazard"
+        @create-hazard="handleCreateHazard"
+        @update-hazard="handleUpdateHazard"
+        @delete-hazard="handleDeleteHazard"
+      />
 
       <AdminMapRightSidebar
         :is-open="isSidebarOpen"
