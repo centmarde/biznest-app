@@ -53,3 +53,5 @@ supabase/migrations/
 # Future local-only Supabase drafts
 supabase/migrations/draft_*.sql
 supabase/migrations/*_local.sql
+
+package-lock.json
