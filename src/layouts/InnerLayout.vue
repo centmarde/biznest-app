@@ -6,11 +6,11 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-far text-foreground">
+  <div class="flex h-screen overflow-hidden flex-col bg-far text-foreground">
     <InnerNavbar />
-    <SidebarProvider class="flex-1">
+    <SidebarProvider class="flex-1 min-h-0">
       <AdminSidebar />
-      <SidebarInset class="p-4 md:p-6">
+      <SidebarInset class="overflow-y-auto">
         <RouterView />
       </SidebarInset>
     </SidebarProvider>

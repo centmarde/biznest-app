@@ -23,6 +23,17 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
   return fallback
 }
 
+const assertValidGeometry = (geometry: HazardGeometry): void => {
+  if(geometry.type === "LineString" &&  geometry.coordinates.length <  2){
+    throw new Error("Line hazard  need at least 2 points")
+  }
+
+  if(geometry.type === "Polygon" && (geometry.coordinates.length === 0 || geometry.coordinates.some(ring => normalizeRing(ring).length < 4))){
+    throw  new Error("Polygon hazard need at least 4 points")
+  }
+
+}
+
 const toGeometryType = (geometry: HazardGeometry): HazardGeometryType => {
       return geometry.type.toLowerCase() as HazardGeometryType
 }
@@ -52,6 +63,7 @@ const normalizeRing = (ring: [number, number][]): [number, number][] => {
 }
 
 const toPostgisGeometry = (geometry: HazardGeometry): string => {
+  assertValidGeometry(geometry)
   if (geometry.type === 'Point') {
     return `SRID=4326;POINT(${formatPoint(geometry.coordinates)})`
   }
@@ -69,8 +81,38 @@ const toPostgisGeometry = (geometry: HazardGeometry): string => {
   return `SRID=4326;POLYGON(${rings})`
 }
 
-const toHazard = (value: unknown): Hazard => {
-  return value as Hazard
+type HazardRow = Omit<Hazard, 'geometry'> & { geometry: unknown }
+
+const GEOMETRY_TYPES = ['Point', 'LineString', 'Polygon'] as const
+type RawGeometryType = (typeof GEOMETRY_TYPES)[number]
+
+const isGeometryType = (value: unknown): value is RawGeometryType =>
+  GEOMETRY_TYPES.includes(value as RawGeometryType)
+
+const parseGeometry = (raw: unknown): HazardGeometry => {
+  // Supabase may return PostGIS geometry as a native object or as a JSON string.
+  const candidate: unknown = typeof raw === 'string' ? JSON.parse(raw) : raw
+
+  if (
+    candidate === null ||
+    typeof candidate !== 'object' ||
+    !isGeometryType((candidate as Record<string, unknown>).type) ||
+    !Array.isArray((candidate as Record<string, unknown>).coordinates)
+  ) {
+    throw new Error(
+      `Unexpected geometry payload from database: ${JSON.stringify(raw)}. ` +
+        'Ensure the hazards table returns geometry as GeoJSON (e.g. via ST_AsGeoJSON or a PostGIS view).',
+    )
+  }
+
+  return candidate as HazardGeometry
+}
+
+const toHazard = (value: HazardRow): Hazard => {
+  return {
+    ...value,
+    geometry: parseGeometry(value.geometry),
+  }
 }
 
 const escapeLikeValue = (value: string): string => {

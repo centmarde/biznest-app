@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Layers, PenTool, TriangleAlert } from 'lucide-vue-next'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Globe, Layers, TriangleAlert } from 'lucide-vue-next'
 import Map from '@/components/map/Map.vue'
 import { useBarangayBorders } from '@/composables/map/useBarangayBorders'
+import type { BarangayFeatureCollection } from '@/types/map.types'
 import HazardFormModal from '@/views/(admin)/map/components/HazardFormModal.vue'
 import AdminMapRightSidebar from '@/views/(admin)/map/components/AdminMapRightSidebar.vue'
 import AdminMapHazardSidebar from '@/views/(admin)/map/components/AdminMapHazardSidebar.vue'
 import MappedZoneFormModal from '@/views/(admin)/map/components/MappedZoneFormModal.vue'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
 import {
   createMappedZone,
@@ -46,6 +53,7 @@ import type {
 } from '@/types/hazard.types'
 
 const provider = ref<'google' | 'leaflet'>('leaflet')
+const mapRef = ref<InstanceType<typeof Map> | null>(null)
 const showBarangayBorders = ref(false)
 const isSidebarOpen = ref(false)
 const isHazardSidebarOpen = ref(false)
@@ -486,6 +494,111 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleDrawUndoShortcut)
 })
 
+// ── Map ref helpers ────────────────────────────────────────────────────────
+
+function getHazardFocusPoints(hazard: Hazard): MapDrawPoint[] {
+  if (hazard.geometry.type === 'Point') {
+    const [lng, lat] = hazard.geometry.coordinates
+    return [{ lat, lng }]
+  }
+
+  if (hazard.geometry.type === 'LineString') {
+    return hazard.geometry.coordinates.map((point) => ({ lat: point[1], lng: point[0] }))
+  }
+
+  return hazard.geometry.coordinates.flatMap((ring) =>
+    ring.map((point) => ({ lat: point[1], lng: point[0] })),
+  )
+}
+
+async function onMapReady(): Promise<void> {
+  mapRef.value?.setDrawMode(isAnyDrawModeActive.value)
+  mapRef.value?.setMapClickHandler(isAnyDrawModeActive.value ? handleMapClick : null)
+  mapRef.value?.setDrawPointMoveHandler(isAnyDrawModeActive.value ? handleDrawPointMove : null)
+  await Promise.all([
+    mapRef.value?.renderBarangayBorders(
+      showBarangayBorders.value,
+      (barangayBorders.value as BarangayFeatureCollection) ?? null,
+    ),
+    mapRef.value?.renderMappedZones(visibleMappedZones.value),
+    mapRef.value?.renderHazards(hazardsEnabled.value, hazards.value),
+    mapRef.value?.renderDrawPreview(activeDrawPoints.value),
+  ])
+}
+
+watch(
+  [showBarangayBorders, barangayBorders],
+  () => {
+    void mapRef.value?.renderBarangayBorders(
+      showBarangayBorders.value,
+      (barangayBorders.value as BarangayFeatureCollection) ?? null,
+    )
+  },
+  { deep: true },
+)
+
+watch(
+  visibleMappedZones,
+  (zones) => {
+    void mapRef.value?.renderMappedZones(zones)
+  },
+  { deep: true },
+)
+
+watch(
+  [hazardsEnabled, hazards],
+  () => {
+    void mapRef.value?.renderHazards(hazardsEnabled.value, hazards.value)
+  },
+  { deep: true },
+)
+
+watch(
+  activeDrawPoints,
+  (points) => {
+    void mapRef.value?.renderDrawPreview(points)
+  },
+  { deep: true },
+)
+
+watch(
+  [selectedMappedZoneId, visibleMappedZones],
+  () => {
+    if (!selectedMappedZoneId.value) {
+      return
+    }
+    const zone = visibleMappedZones.value.find((z) => z.id === selectedMappedZoneId.value)
+    if (zone?.points.length) {
+      void mapRef.value?.focusOnZone(zone.points)
+    }
+  },
+  { deep: true },
+)
+
+watch(
+  [selectedHazardId, hazards, hazardsEnabled],
+  () => {
+    if (!hazardsEnabled.value || !selectedHazardId.value) {
+      return
+    }
+    const hazard = hazards.value.find((h) => h.id === selectedHazardId.value)
+    if (hazard) {
+      const points = getHazardFocusPoints(hazard)
+      if (points.length) {
+        void mapRef.value?.focusOnZone(points)
+      }
+    }
+  },
+  { deep: true },
+)
+
+watch(isAnyDrawModeActive, async (enabled) => {
+  mapRef.value?.setDrawMode(enabled)
+  mapRef.value?.setMapClickHandler(enabled ? handleMapClick : null)
+  mapRef.value?.setDrawPointMoveHandler(enabled ? handleDrawPointMove : null)
+  await mapRef.value?.renderDrawPreview(activeDrawPoints.value)
+})
+
 function cancelDrawZoneMode(): void {
   isDrawMode.value = false
   drawPoints.value = []
@@ -617,108 +730,73 @@ async function handleDeleteHazard(hazardId: HazardId): Promise<void> {
     isSavingHazard.value = false
   }
 }
+
+// ── Panel toggle helpers (mutually exclusive) ──────────────────────────────
+
+function toggleLayerSidebar(): void {
+  isSidebarOpen.value = !isSidebarOpen.value
+  if (isSidebarOpen.value) {
+    isHazardSidebarOpen.value = false
+  }
+}
+
+function toggleHazardSidebar(): void {
+  isHazardSidebarOpen.value = !isHazardSidebarOpen.value
+  if (isHazardSidebarOpen.value) {
+    isSidebarOpen.value = false
+  }
+}
+
 </script>
 
 <template>
-  <div class="w-full h-full flex flex-col gap-3 p-3">
-    <div class="flex flex-wrap items-center gap-2">
-      <TypographySmall as="label" class="text-sm font-medium">Map Provider</TypographySmall>
-      <Select v-model="provider">
-        <SelectTrigger class="w-60">
-          <SelectValue placeholder="Select map provider" />
-        </SelectTrigger>
-        <SelectContent style="z-index: 9999">
-          <SelectItem value="leaflet"><TypographySmall as="span">Leaflet OpenStreetMap</TypographySmall></SelectItem>
-          <SelectItem value="google"><TypographySmall as="span">Google Maps</TypographySmall></SelectItem>
-        </SelectContent>
-      </Select>
+  <!--
+    Map fills the entire main content area.
+    Layout (left → right): [map canvas] [hazard panel?] [layer panel?] [icon strip]
+  -->
+  <div class="flex h-full w-full overflow-hidden">
 
-      <Button variant="outline" :disabled="isLoading" @click="toggleBarangayBorders">
-        <TypographySmall as="span">{{ showBarangayBorders ? 'Hide Barangay Border' : 'Show Barangay Border' }}</TypographySmall>
-      </Button>
+    <!-- ── Map canvas ────────────────────────────────────────────────── -->
+    <div class="relative min-w-0 flex-1">
+      <Map ref="mapRef" :provider="provider" @ready="onMapReady" />
 
-      <Button variant="outline" @click="startDrawZoneMode">
-        <PenTool class="h-4 w-4" />
-        <TypographySmall as="span">Draw Zone</TypographySmall>
-      </Button>
+      <!-- Floating map-provider selector (top-left over the map) -->
+      <div class="absolute left-3 top-3 z-900 flex items-center gap-2">
+        <Select v-model="provider">
+          <SelectTrigger class="h-8 w-48 bg-card/90 text-xs shadow backdrop-blur-sm">
+            <SelectValue placeholder="Map provider" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="leaflet">Leaflet (OpenStreetMap)</SelectItem>
+            <SelectItem value="google">Google Maps</SelectItem>
+          </SelectContent>
+        </Select>
+        <span
+          v-if="isLoading"
+          class="rounded-md bg-card/90 px-2 py-1 text-xs text-muted-foreground shadow backdrop-blur-sm"
+        >
+          Loading borders…
+        </span>
+        <span
+          v-else-if="errorMessage"
+          class="rounded-md bg-card/90 px-2 py-1 text-xs text-destructive shadow backdrop-blur-sm"
+        >
+          {{ errorMessage }}
+        </span>
+      </div>
 
-      <TypographyMuted v-if="isLoading" as="span" class="text-xs text-muted-foreground">Loading barangay borders...</TypographyMuted>
-      <TypographySmall v-if="errorMessage" as="span" class="text-xs text-destructive">{{ errorMessage }}</TypographySmall>
-    </div>
-
-    <div class="relative flex-1 min-h-0">
-      <Map
-        :provider="provider"
-        :show-barangay-borders="showBarangayBorders"
-        :barangay-borders="barangayBorders"
-        :mapped-zones="visibleMappedZones"
-        :hazards="hazards"
-        :show-hazards="hazardsEnabled"
-        :selected-hazard-id="selectedHazardId"
-        :selected-mapped-zone-id="selectedMappedZoneId"
-        :draw-points="activeDrawPoints"
-        :is-draw-mode="isAnyDrawModeActive"
-        @map-click="handleMapClick"
-        @draw-point-move="handleDrawPointMove"
-      />
-
-      <Button
-        variant="secondary"
-        class="absolute right-30 top-3 z-9998"
-        @click="isHazardSidebarOpen = true"
-      >
-        <TriangleAlert class="h-4 w-4" />
-        <TypographySmall as="span">Hazards</TypographySmall>
-      </Button>
-
-      <Button
-        variant="secondary"
-        class="absolute right-3 top-3 z-9998"
-        @click="isSidebarOpen = true"
-      >
-        <Layers class="h-4 w-4" />
-        <TypographySmall as="span">Layers</TypographySmall>
-      </Button>
-
-      <AdminMapHazardSidebar
-        :is-open="isHazardSidebarOpen"
-        :hazards="hazards"
-        :is-enabled="hazardsEnabled"
-        :is-loading="isLoadingHazards"
-        :is-submitting="isSavingHazard"
-        :error-message="hazardError"
-        :selected-hazard-id="selectedHazardId"
-        @close="isHazardSidebarOpen = false"
-        @refresh="loadHazards(true)"
-        @toggle-enabled="handleToggleHazardsEnabled"
-        @select-hazard="handleSelectHazard"
-        @start-create-hazard="handleStartCreateHazard"
-        @update-hazard="handleUpdateHazard"
-        @delete-hazard="handleDeleteHazard"
-      />
-
-      <AdminMapRightSidebar
-        :is-open="isSidebarOpen"
-        :layers="zoningLayers"
-        :mapped-zones="mappedZones"
-        :is-submitting="isSidebarSubmitting"
-        @close="isSidebarOpen = false"
-        @submit-layer="handleCreateLayer"
-        @update-layer="handleUpdateLayer"
-        @delete-layer="handleDeleteLayer"
-        @update-mapped-zone="handleUpdateMappedZone"
-        @delete-mapped-zone="handleDeleteMappedZone"
-        @focus-mapped-zone="handleFocusMappedZone"
-        @toggle-layer-visibility="handleToggleLayerVisibility"
-      />
-
+      <!-- Hazard placement HUD (below provider selector) -->
       <div
         v-if="isHazardPlacementActive"
-        class="absolute left-3 top-3 z-9999 rounded-md border bg-card/95 px-3 py-2 text-xs shadow"
+        class="absolute left-3 top-14 z-900 rounded-md border bg-card/95 px-3 py-2 shadow"
       >
-        <TypographySmall as="p" class="font-medium text-xs">Hazard Placement Active</TypographySmall>
-        <TypographyMuted as="p" class="text-xs text-muted-foreground">
-          {{ hazardPlacementType === 'point' ? 'Click the map once to place a pin.' : `Captured ${hazardDrawPoints.length} points` }}
+        <TypographySmall as="p" class="text-xs font-medium">Hazard Placement Active</TypographySmall>
+        <TypographyMuted as="p" class="text-xs">
+          {{
+            hazardPlacementType === 'point'
+              ? 'Click the map once to place a pin.'
+              : `Captured ${hazardDrawPoints.length} points`
+          }}
         </TypographyMuted>
         <div class="mt-2 flex gap-2">
           <Button
@@ -750,12 +828,13 @@ async function handleDeleteHazard(hazardId: HazardId): Promise<void> {
         </div>
       </div>
 
+      <!-- Draw zone HUD (below provider selector) -->
       <div
         v-else-if="isDrawMode"
-        class="absolute left-3 top-3 z-9999 rounded-md border bg-card/95 px-3 py-2 text-xs shadow"
+        class="absolute left-3 top-14 z-900 rounded-md border bg-card/95 px-3 py-2 shadow"
       >
-        <TypographySmall as="p" class="font-medium text-xs">Draw Mode Active</TypographySmall>
-        <TypographyMuted as="p" class="text-xs text-muted-foreground">{{ drawPoints.length }} points</TypographyMuted>
+        <TypographySmall as="p" class="text-xs font-medium">Draw Mode Active</TypographySmall>
+        <TypographyMuted as="p" class="text-xs">{{ drawPoints.length }} points</TypographyMuted>
         <div class="mt-2 flex gap-2">
           <Button
             size="sm"
@@ -765,20 +844,24 @@ async function handleDeleteHazard(hazardId: HazardId): Promise<void> {
           >
             <TypographySmall as="span">Undo</TypographySmall>
           </Button>
-          <Button size="sm" variant="outline" @click="cancelDrawZoneMode"><TypographySmall as="span">Cancel</TypographySmall></Button>
+          <Button size="sm" variant="outline" @click="cancelDrawZoneMode">
+            <TypographySmall as="span">Cancel</TypographySmall>
+          </Button>
           <Button size="sm" :disabled="drawPoints.length < 3" @click="finishDrawZoneMode">
             <TypographySmall as="span">Save Polygon</TypographySmall>
           </Button>
         </div>
       </div>
 
+      <!-- Zoning error toast (bottom-left) -->
       <div
         v-if="zoningError"
-        class="absolute bottom-3 left-3 z-9999 rounded-md border border-destructive/45 bg-destructive/12 px-3 py-2 text-xs text-destructive shadow"
+        class="absolute bottom-3 left-3 z-900 rounded-md border border-destructive/45 bg-destructive/12 px-3 py-2 text-destructive shadow"
       >
-        <TypographySmall as="p" class="m-0 text-xs text-destructive">{{ zoningError }}</TypographySmall>
+        <TypographySmall as="p" class="m-0 text-xs">{{ zoningError }}</TypographySmall>
       </div>
 
+      <!-- Portaled modals (Sheet — renders in <body>) -->
       <HazardFormModal
         :open="showHazardFormModal"
         mode="add"
@@ -788,7 +871,6 @@ async function handleDeleteHazard(hazardId: HazardId): Promise<void> {
         @close="handleHazardPlacementCancel"
         @submit-create="handleSaveHazard"
       />
-
       <MappedZoneFormModal
         :open="showMappedZoneModal"
         :layers="zoningLayers"
@@ -797,6 +879,101 @@ async function handleDeleteHazard(hazardId: HazardId): Promise<void> {
         @close="showMappedZoneModal = false"
         @submit="handleSaveMappedZone"
       />
+    </div>
+
+    <!-- ── Hazard panel (inline, left of icon strip) ──────────────── -->
+    <AdminMapHazardSidebar
+      v-if="isHazardSidebarOpen"
+      :hazards="hazards"
+      :is-enabled="hazardsEnabled"
+      :is-loading="isLoadingHazards"
+      :is-submitting="isSavingHazard"
+      :error-message="hazardError"
+      :selected-hazard-id="selectedHazardId"
+      @close="isHazardSidebarOpen = false"
+      @refresh="loadHazards(true)"
+      @toggle-enabled="handleToggleHazardsEnabled"
+      @select-hazard="handleSelectHazard"
+      @start-create-hazard="handleStartCreateHazard"
+      @update-hazard="handleUpdateHazard"
+      @delete-hazard="handleDeleteHazard"
+    />
+
+    <!-- ── Layer panel (inline, left of icon strip) ───────────────── -->
+    <AdminMapRightSidebar
+      v-if="isSidebarOpen"
+      :layers="zoningLayers"
+      :mapped-zones="mappedZones"
+      :is-submitting="isSidebarSubmitting"
+      @close="isSidebarOpen = false"
+      @start-draw-zone="startDrawZoneMode"
+      @submit-layer="handleCreateLayer"
+      @update-layer="handleUpdateLayer"
+      @delete-layer="handleDeleteLayer"
+      @update-mapped-zone="handleUpdateMappedZone"
+      @delete-mapped-zone="handleDeleteMappedZone"
+      @focus-mapped-zone="handleFocusMappedZone"
+      @toggle-layer-visibility="handleToggleLayerVisibility"
+    />
+
+    <!-- ── Vertical icon strip (always visible) ───────────────────── -->
+    <div class="flex w-11 shrink-0 flex-col border-l bg-card">
+      <TooltipProvider :delay-duration="300">
+
+        <!-- Layers -->
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <button
+              type="button"
+              class="flex h-11 w-full items-center justify-center transition-colors hover:bg-muted"
+              :class="isSidebarOpen ? 'bg-muted text-foreground' : 'text-muted-foreground'"
+              @click="toggleLayerSidebar"
+            >
+              <Layers class="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left">Layers</TooltipContent>
+        </Tooltip>
+
+        <div class="h-px bg-border" />
+
+        <!-- Hazards -->
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <button
+              type="button"
+              class="flex h-11 w-full items-center justify-center transition-colors hover:bg-muted"
+              :class="isHazardSidebarOpen ? 'bg-muted text-amber-500' : 'text-muted-foreground'"
+              @click="toggleHazardSidebar"
+            >
+              <TriangleAlert class="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left">Hazards</TooltipContent>
+        </Tooltip>
+
+        <div class="h-px bg-border" />
+
+        <!-- Barangay borders -->
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <button
+              type="button"
+              class="flex h-11 w-full items-center justify-center transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+              :class="showBarangayBorders ? 'bg-muted text-foreground' : 'text-muted-foreground'"
+              :disabled="isLoading"
+              @click="toggleBarangayBorders"
+            >
+              <Globe class="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            {{ showBarangayBorders ? 'Hide Barangay Borders' : 'Show Barangay Borders' }}
+          </TooltipContent>
+        </Tooltip>
+
+
+      </TooltipProvider>
     </div>
   </div>
 </template>

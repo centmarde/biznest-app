@@ -52,10 +52,12 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
 
     const L = await import('leaflet')
 
-    leafletMap = L.map(options.containerRef.value).setView(
+    leafletMap = L.map(options.containerRef.value, { zoomControl: false }).setView(
       [options.center.lat, options.center.lng],
       14,
     )
+
+    L.control.zoom({ position: 'bottomright' }).addTo(leafletMap)
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -272,7 +274,15 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     const layerGroup = L.layerGroup()
 
     hazards.forEach((hazard) => {
-      const popupHtml = `<strong>${hazard.name}</strong><br/>${hazard.category} • ${hazard.severity}`
+      const buildPopupContent = (): HTMLDivElement => {
+        const container = document.createElement("div");
+        const title = document.createElement("strong")
+        title.textContent = hazard.name
+        const meta = document.createElement("div")
+        meta.textContent =  `${hazard.category} • ${hazard.severity}`
+        container.append(title, document.createElement("br"), meta)
+        return container;
+      }
 
       if (hazard.geometry.type === 'Point') {
         const [lng, lat] = hazard.geometry.coordinates
@@ -283,7 +293,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
           fillColor: '#ef4444',
           fillOpacity: 0.35,
         })
-          .bindPopup(popupHtml)
+          .bindPopup(buildPopupContent)
           .addTo(layerGroup)
         return
       }
@@ -297,7 +307,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
             opacity: 0.95,
           },
         )
-          .bindPopup(popupHtml)
+          .bindPopup(buildPopupContent)
           .addTo(layerGroup)
         return
       }
@@ -314,7 +324,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
           fillOpacity: 0.2,
         },
       )
-        .bindPopup(popupHtml)
+        .bindPopup(buildPopupContent)
         .addTo(layerGroup)
     })
 

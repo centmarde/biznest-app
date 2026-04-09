@@ -1,7 +1,6 @@
-    <script setup lang="ts">
+<script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -10,6 +9,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import type {
   CreateHazardFormInput,
   Hazard,
@@ -107,6 +113,18 @@ watch(
   { deep: true, immediate: true },
 )
 
+function isCoordinatePair(value: unknown): value is [number, number] {
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    value.every((entry) => typeof entry === 'number' && Number.isFinite(entry))
+  )
+}
+
+function isLinearRing(value: unknown): value is [number, number][] {
+  return Array.isArray(value) && value.length >= 4 && value.every(isCoordinatePair)
+}
+
 function buildGeometry(): HazardGeometry | null {
   parseError.message = ''
 
@@ -114,37 +132,37 @@ function buildGeometry(): HazardGeometry | null {
     const raw = JSON.parse(form.coordinatesText)
 
     if (form.geometry_type === 'point') {
-      if (!Array.isArray(raw) || raw.length !== 2) {
+      if (!isCoordinatePair(raw)) {
         parseError.message = 'Point coordinates must be [lng, lat].'
         return null
       }
 
       return {
         type: 'Point',
-        coordinates: [Number(raw[0]), Number(raw[1])],
+        coordinates: raw,
       }
     }
 
     if (form.geometry_type === 'linestring') {
-      if (!Array.isArray(raw) || raw.length < 2) {
+      if (!Array.isArray(raw) || raw.length < 2 || !raw.every(isCoordinatePair)) {
         parseError.message = 'LineString coordinates must be [[lng, lat], ...].'
         return null
       }
 
       return {
-          type: 'LineString',
-        coordinates: raw.map((point) => [Number(point[0]), Number(point[1])]),
+        type: 'LineString',
+        coordinates: raw,
       }
     }
 
-    if (!Array.isArray(raw) || raw.length === 0) {
+    if (!Array.isArray(raw) || raw.length === 0 || !raw.every(isLinearRing)) {
       parseError.message = 'Polygon coordinates must be [[[lng, lat], ...]].'
       return null
     }
 
     return {
       type: 'Polygon',
-      coordinates: raw.map((ring) => ring.map((point: [number, number]) => [Number(point[0]), Number(point[1])])),
+      coordinates: raw,
     }
   } catch {
     parseError.message = 'Coordinates must be valid JSON.'
@@ -185,15 +203,16 @@ function submit(): void {
 </script>
 
 <template>
-  <div
-    v-if="open"
-    class="fixed inset-0 z-10000 flex items-stretch justify-end bg-black/40"
-  >
-    <Card class="flex h-screen w-full max-w-full rounded-none border-0 border-l shadow-2xl sm:w-[41.6667vw] sm:max-w-[41.6667vw] py-0">
-      <CardHeader class="shrink-0 border-b py-4 px-5">
-        <CardTitle class="text-base">{{ modalTitle }}</CardTitle>
-      </CardHeader>
-      <CardContent class="flex-1 space-y-3 overflow-y-auto p-5">
+  <Sheet :open="open" @update:open="(val) => { if (!val) emit('close') }">
+    <SheetContent
+      side="right"
+      class="flex flex-col gap-0 p-0 sm:max-w-[41.6667vw] w-full overflow-hidden"
+    >
+      <SheetHeader class="shrink-0 border-b py-4 px-5 pr-12">
+        <SheetTitle class="text-base">{{ modalTitle }}</SheetTitle>
+      </SheetHeader>
+
+      <div class="flex-1 overflow-y-auto p-5">
         <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <div class="col-span-2 space-y-1">
             <label class="text-xs font-medium">Hazard Name</label>
@@ -216,7 +235,7 @@ function submit(): void {
               <SelectTrigger>
                 <SelectValue placeholder="Select severity" />
               </SelectTrigger>
-              <SelectContent class="z-10002">
+              <SelectContent>
                 <SelectItem v-for="severity in severityOptions" :key="severity" :value="severity">
                   {{ severity }}
                 </SelectItem>
@@ -230,7 +249,7 @@ function submit(): void {
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
-              <SelectContent class="z-10002">
+              <SelectContent>
                 <SelectItem v-for="status in statusOptions" :key="status" :value="status">
                   {{ status }}
                 </SelectItem>
@@ -265,7 +284,7 @@ function submit(): void {
               <SelectTrigger>
                 <SelectValue placeholder="Select geometry" />
               </SelectTrigger>
-              <SelectContent class="z-10002">
+              <SelectContent>
                 <SelectItem v-for="geometry in geometryOptions" :key="geometry" :value="geometry">
                   {{ placementLabels[geometry] }}
                 </SelectItem>
@@ -300,13 +319,12 @@ function submit(): void {
             <p v-if="parseError.message" class="text-xs text-destructive">{{ parseError.message }}</p>
           </div>
         </div>
+      </div>
 
-        <div class="sticky bottom-0 mt-4 flex justify-end gap-2 border-t bg-background/95 py-4">
-          <Button variant="outline" @click="emit('close')">Cancel</Button>
-          <Button :disabled="!canSubmit" @click="submit">{{ submitLabel }}</Button>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
+      <SheetFooter class="shrink-0 border-t bg-background/95 px-5 py-4">
+        <Button variant="outline" @click="emit('close')">Cancel</Button>
+        <Button :disabled="!canSubmit" @click="submit">{{ submitLabel }}</Button>
+      </SheetFooter>
+    </SheetContent>
+  </Sheet>
 </template>
-

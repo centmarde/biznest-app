@@ -23,7 +23,6 @@ import type {
 
 const props = withDefaults(
   defineProps<{
-    isOpen: boolean
     hazards?: Hazard[]
     isEnabled?: boolean
     isLoading?: boolean
@@ -106,12 +105,9 @@ function submitUpdate(payload: UpdateHazardInput): void {
 </script>
 
 <template>
-  <aside
-    v-if="props.isOpen"
-    class="absolute right-96 top-3 z-9998 w-90 max-w-[calc(100%-1.5rem)]"
-  >
-    <Card class="max-h-[calc(100vh-10rem)] overflow-hidden py-0">
-      <CardHeader class="border-b py-4">
+  <aside class="flex h-full w-80 shrink-0 flex-col border-l">
+    <Card class="flex h-full flex-col rounded-none border-0 shadow-none py-0">
+      <CardHeader class="shrink-0 border-b py-4">
         <CardTitle class="flex items-center justify-between text-base">
           <div class="flex items-center gap-2">
             <AlertTriangle class="h-4 w-4 text-amber-500" />
@@ -125,7 +121,7 @@ function submitUpdate(payload: UpdateHazardInput): void {
         </CardTitle>
       </CardHeader>
 
-      <CardContent class="space-y-3 overflow-y-auto p-4">
+      <CardContent class="flex-1 space-y-3 overflow-y-auto p-4">
         <div class="flex gap-2">
           <Button
             class="flex-1"

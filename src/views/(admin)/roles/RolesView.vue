@@ -45,7 +45,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="w-full space-y-5">
+  <section class="w-full space-y-5 p-4 md:p-6">
     <RolesHeader
       v-model:search-query="searchQuery"
       :total-roles-count="roleCounts.total"

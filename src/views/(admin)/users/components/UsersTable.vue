@@ -31,11 +31,9 @@ import { useAlertContext } from '@/composables/useAlert'
 const props = withDefaults(
   defineProps<{
     rows?: UserRow[]
-    isLoading?: boolean
   }>(),
   {
     rows: () => [],
-    isLoading: false,
   },
 )
 
@@ -150,7 +148,6 @@ const onUserUpdated = (user: UserRow) => {
         </TableHeader>
 
         <TableBody>
-          <template v-if="!isLoading && hasRows">
           <TableRow v-for="row in paginatedRows" :key="row.id">
             <TableCell class="px-4 py-3 font-medium">{{ row.id }}</TableCell>
             <TableCell class="px-4 py-3">{{ row.username }}</TableCell>
@@ -172,15 +169,8 @@ const onUserUpdated = (user: UserRow) => {
               </div>
             </TableCell>
           </TableRow>
-          </template>
 
-          <TableRow v-if="isLoading">
-            <TableCell colspan="6" class="px-4 py-10 text-center text-muted-foreground">
-              Loading users...
-            </TableCell>
-          </TableRow>
-
-          <TableRow v-else-if="!hasRows">
+          <TableRow v-if="!hasRows">
             <TableCell colspan="6" class="px-4 py-10 text-center text-muted-foreground">
               <TypographyMuted as="p" class="mt-0">No users found.</TypographyMuted>
             </TableCell>

@@ -20,7 +20,6 @@ import type {
 
 const props = withDefaults(
   defineProps<{
-    isOpen: boolean
     layers: ZoningLayer[]
     mappedZones?: MappedZone[]
     isSubmitting?: boolean
@@ -33,6 +32,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'close'): void
+  (e: 'start-draw-zone'): void
   (e: 'submit-layer', payload: CreateZoningLayerInput): void
   (e: 'update-layer', payload: { layerId: string; input: UpdateZoningLayerInput }): void
   (e: 'delete-layer', layerId: string): void
@@ -80,21 +80,23 @@ const {
 </script>
 
 <template>
-  <aside
-    v-if="isOpen"
-    class="absolute right-3 top-3 z-9999 w-90 max-w-[calc(100%-1.5rem)]"
-  >
-    <Card class="max-h-[calc(100vh-10rem)] overflow-hidden py-0">
-      <CardHeader class="border-b py-4">
+  <aside class="flex h-full w-80 shrink-0 flex-col border-l">
+    <Card class="flex h-full flex-col rounded-none border-0 shadow-none py-0">
+      <CardHeader class="shrink-0 border-b py-4">
         <CardTitle class="flex items-center justify-between text-base">
           <TypographyP as="span" class="m-0 leading-none">Map Layer</TypographyP>
-          <Button variant="ghost" size="icon-sm" @click="emit('close')">
-            <X class="h-4 w-4" />
-          </Button>
+          <div class="flex items-center gap-1">
+            <Button variant="ghost" size="icon-sm" title="Draw zone" @click="emit('start-draw-zone')">
+              <Plus class="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon-sm" @click="emit('close')">
+              <X class="h-4 w-4" />
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
 
-      <CardContent class="space-y-4 overflow-y-auto p-4">
+      <CardContent class="flex-1 space-y-4 overflow-y-auto p-4">
         <section class="space-y-2">
           <button
             type="button"
