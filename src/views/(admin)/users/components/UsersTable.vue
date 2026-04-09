@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import { TypographyMuted } from '@/components/typography'
 import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
 import { getRoleBadgeVariant } from '@/utils/roles.utils'
@@ -32,11 +31,9 @@ import { useAlertContext } from '@/composables/useAlert'
 const props = withDefaults(
   defineProps<{
     rows?: UserRow[]
-    isLoading?: boolean
   }>(),
   {
     rows: () => [],
-    isLoading: false,
   },
 )
 
@@ -151,51 +148,33 @@ const onUserUpdated = (user: UserRow) => {
         </TableHeader>
 
         <TableBody>
-          <template v-if="isLoading">
-            <TableRow v-for="n in pageSize" :key="`skeleton-${n}`">
-              <TableCell class="px-4 py-3"><Skeleton class="h-4 w-16" /></TableCell>
-              <TableCell class="px-4 py-3"><Skeleton class="h-4 w-28" /></TableCell>
-              <TableCell class="px-4 py-3"><Skeleton class="h-4 w-40" /></TableCell>
-              <TableCell class="px-4 py-3"><Skeleton class="h-4 w-20" /></TableCell>
-              <TableCell class="px-4 py-3"><Skeleton class="h-5 w-14 rounded-full" /></TableCell>
-              <TableCell class="px-4 py-3">
-                <div class="flex items-center justify-end gap-2">
-                  <Skeleton class="h-8 w-16 rounded-md" />
-                  <Skeleton class="h-8 w-18 rounded-md" />
-                </div>
-              </TableCell>
-            </TableRow>
-          </template>
+          <TableRow v-for="row in paginatedRows" :key="row.id">
+            <TableCell class="px-4 py-3 font-medium">{{ row.id }}</TableCell>
+            <TableCell class="px-4 py-3">{{ row.username }}</TableCell>
+            <TableCell class="px-4 py-3 text-muted-foreground">{{ row.email }}</TableCell>
+            <TableCell class="px-4 py-3">{{ row.city }}</TableCell>
+            <TableCell class="px-4 py-3">
+              <Badge :variant="getRoleBadgeVariant(row.role)">{{ row.role }}</Badge>
+            </TableCell>
+            <TableCell class="px-4 py-3">
+              <div class="flex items-center justify-end gap-2">
+                <Button size="sm" variant="outline" @click="openEditModal(row)">
+                  <Pencil class="size-4" />
+                  Edit
+                </Button>
+                <Button size="sm" variant="destructive" @click="openDeleteModal(row)">
+                  <Trash2 class="size-4" />
+                  Delete
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
 
-          <template v-else>
-            <TableRow v-for="row in paginatedRows" :key="row.id">
-              <TableCell class="px-4 py-3 font-medium">{{ row.id }}</TableCell>
-              <TableCell class="px-4 py-3">{{ row.username }}</TableCell>
-              <TableCell class="px-4 py-3 text-muted-foreground">{{ row.email }}</TableCell>
-              <TableCell class="px-4 py-3">{{ row.city }}</TableCell>
-              <TableCell class="px-4 py-3">
-                <Badge :variant="getRoleBadgeVariant(row.role)">{{ row.role }}</Badge>
-              </TableCell>
-              <TableCell class="px-4 py-3">
-                <div class="flex items-center justify-end gap-2">
-                  <Button size="sm" variant="outline" @click="openEditModal(row)">
-                    <Pencil class="size-4" />
-                    Edit
-                  </Button>
-                  <Button size="sm" variant="destructive" @click="openDeleteModal(row)">
-                    <Trash2 class="size-4" />
-                    Delete
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-
-            <TableRow v-if="!hasRows">
-              <TableCell colspan="6" class="px-4 py-10 text-center text-muted-foreground">
-                <TypographyMuted as="p" class="mt-0">No users found.</TypographyMuted>
-              </TableCell>
-            </TableRow>
-          </template>
+          <TableRow v-if="!hasRows">
+            <TableCell colspan="6" class="px-4 py-10 text-center text-muted-foreground">
+              <TypographyMuted as="p" class="mt-0">No users found.</TypographyMuted>
+            </TableCell>
+          </TableRow>
         </TableBody>
       </Table>
     </div>
