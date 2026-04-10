@@ -13,6 +13,28 @@ import type {
 const ZONING_LAYERS_TABLE = 'zoning_layers'
 const MAPPED_ZONES_TABLE = 'mapped_zones'
 
+async function getCurrentCityId(): Promise<string> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.auth.getUser()
+
+  if (error || !data.user) {
+    throw new Error('Unable to resolve current user city. Please sign in again.')
+  }
+
+  const metadata = (data.user.user_metadata ?? {}) as Record<string, unknown>
+  const cityId = typeof metadata.city_id === 'string'
+    ? metadata.city_id.trim()
+    : typeof metadata.cityId === 'string'
+      ? metadata.cityId.trim()
+      : ''
+
+  if (!cityId) {
+    throw new Error('Missing city_id in account metadata. Contact an administrator.')
+  }
+
+  return cityId
+}
+
 function normalizePolygonPoints(points: MapDrawPoint[]): [number, number][] {
   const ring = points.map((point) => [point.lng, point.lat] as [number, number])
 
@@ -72,9 +94,12 @@ function toMappedZone(row: MappedZoneRpcRow): MappedZone {
 
 export async function listCityZoningLayers(): Promise<ZoningLayer[]> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
+
   const { data, error } = await supabase
     .from(ZONING_LAYERS_TABLE)
     .select('id, title, color, description, is_active, created_at, updated_at')
+    .eq('city_id', cityId)
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -113,6 +138,7 @@ export async function updateZoningLayer(
   input: UpdateZoningLayerInput,
 ): Promise<ZoningLayer> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
   const payload = {
     title: input.title.trim(),
     color: input.color,
@@ -123,6 +149,7 @@ export async function updateZoningLayer(
     .from(ZONING_LAYERS_TABLE)
     .update(payload)
     .eq('id', layerId)
+    .eq('city_id', cityId)
     .select('id, title, color, description, is_active, created_at, updated_at')
     .single()
 
@@ -135,10 +162,12 @@ export async function updateZoningLayer(
 
 export async function deleteZoningLayer(layerId: string): Promise<void> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
   const { error } = await supabase
     .from(ZONING_LAYERS_TABLE)
     .delete()
     .eq('id', layerId)
+    .eq('city_id', cityId)
 
   if (error) {
     throw new Error(error.message)
@@ -150,11 +179,13 @@ export async function setZoningLayerActive(
   isActive: boolean,
 ): Promise<ZoningLayer> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
 
   const { data, error } = await supabase
     .from(ZONING_LAYERS_TABLE)
     .update({ is_active: isActive })
     .eq('id', layerId)
+    .eq('city_id', cityId)
     .select('id, title, color, description, is_active, created_at, updated_at')
     .single()
 
@@ -201,6 +232,12 @@ export async function createMappedZone(input: CreateMappedZoneInput): Promise<vo
   })
 
   if (error) {
+    if (error.message.includes('Invalid zoning layer for current city')) {
+      throw new Error(
+        'Selected zoning layer does not belong to your assigned city. Reload zoning layers and pick a valid layer.',
+      )
+    }
+
     throw new Error(error.message)
   }
 }
@@ -210,6 +247,7 @@ export async function updateMappedZone(
   input: UpdateMappedZoneInput,
 ): Promise<void> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
   const payload = {
     zoning_layer_id: input.zoningLayerId,
     name: input.name.trim(),
@@ -220,6 +258,7 @@ export async function updateMappedZone(
     .from(MAPPED_ZONES_TABLE)
     .update(payload)
     .eq('id', zoneId)
+    .eq('city_id', cityId)
 
   if (error) {
     throw new Error(error.message)
@@ -228,10 +267,12 @@ export async function updateMappedZone(
 
 export async function deleteMappedZone(zoneId: string): Promise<void> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
   const { error } = await supabase
     .from(MAPPED_ZONES_TABLE)
     .delete()
     .eq('id', zoneId)
+    .eq('city_id', cityId)
 
   if (error) {
     throw new Error(error.message)
