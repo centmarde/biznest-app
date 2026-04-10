@@ -87,7 +87,7 @@ const {
       <!-- Floating map-provider selector (top-left over the map) -->
       <div class="absolute left-3 top-3 z-900 flex items-center gap-2">
         <Select v-model="provider">
-          <SelectTrigger class="h-8 w-48 bg-card/90 text-xs shadow backdrop-blur-sm">
+          <SelectTrigger size="sm" class="w-48 bg-card text-foreground dark:bg-card">
             <SelectValue placeholder="Map provider" />
           </SelectTrigger>
           <SelectContent>

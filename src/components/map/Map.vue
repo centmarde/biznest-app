@@ -230,14 +230,14 @@ defineExpose({
 </script>
 
 <template>
-  <div class="relative w-full h-full">
+  <div class="relative h-full w-full z-0">
     <div
       v-if="mapError"
       class="absolute left-3 top-3 z-50 rounded-md border border-destructive/45 bg-destructive/12 px-3 py-2 text-xs text-destructive shadow"
     >
       {{ mapError }}
     </div>
-    <div ref="mapContainer" class="h-full w-full"></div>
+    <div ref="mapContainer" class="absolute inset-0 z-0"></div>
   </div>
 </template>
 
