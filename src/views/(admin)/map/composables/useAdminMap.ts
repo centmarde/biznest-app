@@ -11,12 +11,14 @@ import {
   createZoningLayer,
   deleteMappedZone,
   deleteZoningLayer,
-  listMyMappedZones,
-  listMyZoningLayers,
+  listCityMappedZones,
+  listCityZoningLayers,
   setZoningLayerActive,
   updateMappedZone,
   updateZoningLayer,
 } from '@/services/zoning/zoning.service.ts'
+import { resolveCityCenter } from '@/services/cities.service.ts'
+import { getSupabaseClient } from '@/services/supabase.client.ts'
 import type {
   CreateHazardFormInput,
   Hazard,
@@ -41,6 +43,7 @@ export function useAdminMap() {
   // ── Map state ──────────────────────────────────────────────────────────────
   const provider = ref<'google' | 'leaflet'>('leaflet')
   const mapRef = ref<InstanceType<typeof Map> | null>(null)
+  const mapCenter = ref({ lat: 8.9475, lng: 125.5406 })
 
   // ── Barangay borders ───────────────────────────────────────────────────────
   const { barangayBorders, isLoading, errorMessage, loadBarangayBorders } = useBarangayBorders()
@@ -107,7 +110,7 @@ export function useAdminMap() {
   async function loadZoningLayers(): Promise<void> {
     zoningError.value = ''
     try {
-      zoningLayers.value = await listMyZoningLayers()
+      zoningLayers.value = await listCityZoningLayers()
     } catch (error) {
       zoningError.value = error instanceof Error ? error.message : 'Failed to load zoning layers.'
     }
@@ -116,10 +119,33 @@ export function useAdminMap() {
   async function loadMappedZones(): Promise<void> {
     zoningError.value = ''
     try {
-      mappedZones.value = await listMyMappedZones()
+      mappedZones.value = await listCityMappedZones()
     } catch (error) {
       zoningError.value = error instanceof Error ? error.message : 'Failed to load mapped zones.'
     }
+  }
+
+  async function loadMapCenterFromUserMetadata(): Promise<void> {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase.auth.getUser()
+
+    if (error || !data.user) {
+      return
+    }
+
+    const metadata = (data.user.user_metadata ?? {}) as Record<string, unknown>
+    const center = await resolveCityCenter({
+      cityId: typeof metadata.city_id === 'string' ? metadata.city_id : null,
+      cityName: typeof metadata.city_name === 'string' ? metadata.city_name : null,
+      legacyCity: typeof metadata.city === 'string' ? metadata.city : null,
+    })
+
+    if (!center) {
+      return
+    }
+
+    mapCenter.value = { lat: center.lat, lng: center.lng }
+    mapRef.value?.setCenter(mapCenter.value, 14)
   }
 
   async function handleCreateLayer(payload: CreateZoningLayerInput): Promise<void> {
@@ -512,6 +538,7 @@ export function useAdminMap() {
   }
 
   async function onMapReady(): Promise<void> {
+    mapRef.value?.setCenter(mapCenter.value, 14)
     mapRef.value?.setDrawMode(isAnyDrawModeActive.value)
     mapRef.value?.setMapClickHandler(isAnyDrawModeActive.value ? handleMapClick : null)
     mapRef.value?.setDrawPointMoveHandler(isAnyDrawModeActive.value ? handleDrawPointMove : null)
@@ -606,7 +633,7 @@ export function useAdminMap() {
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   onMounted(async () => {
     window.addEventListener('keydown', handleDrawUndoShortcut)
-    await Promise.all([loadZoningLayers(), loadMappedZones()])
+    await Promise.all([loadMapCenterFromUserMetadata(), loadZoningLayers(), loadMappedZones()])
   })
 
   onBeforeUnmount(() => {
@@ -617,6 +644,7 @@ export function useAdminMap() {
     // Map
     provider,
     mapRef,
+    mapCenter,
     onMapReady,
     // Barangay borders
     barangayBorders,
