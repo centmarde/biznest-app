@@ -195,54 +195,60 @@ function handleStartDrawZone(): void {
           >
             <div class="w-full">
               <div class="w-full h-px bg-border/80" />
-              <div
-                class="flex items-center gap-1 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50"
-                @click="toggleLayerExpanded(layer.id)"
-              >
-              <span
-                class="h-3 w-3 rounded-sm border"
-                :style="{ backgroundColor: layer.color }"
-              />
-              <TypographySmall as="span" class="flex-1 truncate text-sm font-medium">{{ layer.title }}</TypographySmall>
-              <Badge variant="secondary">{{ mappedZoneCountByLayerId[layer.id] ?? 0 }}</Badge>
-              <ChevronRight
-                class="h-3.5 w-3.5 transition-transform"
-                :class="isLayerExpanded(layer.id) ? 'rotate-90' : ''"
-              />
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title="Update layer"
-                :disabled="isSubmitting"
-                @click.stop="openEditLayerModal(layer)"
-              >
-                <Pencil class="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title="Delete layer"
-                :disabled="isSubmitting"
-                @click.stop="openDeleteDialog(layer.id)"
-              >
-                <Trash2 class="h-4 w-4 text-destructive" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                :title="layer.is_active ? 'Hide layer zones' : 'Show layer zones'"
-                :disabled="isSubmitting"
-                @click.stop="toggleLayerVisibility(layer)"
-              >
-                <Eye v-if="layer.is_active" class="h-4 w-4" />
-                <EyeOff v-else class="h-4 w-4" />
-              </Button>
-            </div>
+              <div class="flex items-center gap-1 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50">
+                <button
+                  type="button"
+                  class="flex min-w-0 flex-1 items-center gap-1 text-left"
+                  :aria-expanded="isLayerExpanded(layer.id)"
+                  :aria-controls="`mapped-zones-${layer.id}`"
+                  @click="toggleLayerExpanded(layer.id)"
+                >
+                  <span
+                    class="h-3 w-3 rounded-sm border"
+                    :style="{ backgroundColor: layer.color }"
+                  />
+                  <TypographySmall as="span" class="flex-1 truncate text-sm font-medium">{{ layer.title }}</TypographySmall>
+                  <Badge variant="secondary">{{ mappedZoneCountByLayerId[layer.id] ?? 0 }}</Badge>
+                  <ChevronRight
+                    class="h-3.5 w-3.5 transition-transform"
+                    :class="isLayerExpanded(layer.id) ? 'rotate-90' : ''"
+                  />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Update layer"
+                  :disabled="isSubmitting"
+                  @click="openEditLayerModal(layer)"
+                >
+                  <Pencil class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Delete layer"
+                  :disabled="isSubmitting"
+                  @click="openDeleteDialog(layer.id)"
+                >
+                  <Trash2 class="h-4 w-4 text-destructive" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :title="layer.is_active ? 'Hide layer zones' : 'Show layer zones'"
+                  :disabled="isSubmitting"
+                  @click="toggleLayerVisibility(layer)"
+                >
+                  <Eye v-if="layer.is_active" class="h-4 w-4" />
+                  <EyeOff v-else class="h-4 w-4" />
+                </Button>
+              </div>
               <div class="w-full h-px bg-border/80" />
             </div>
 
             <LayerMappedZonesDropdown
               v-if="isLayerExpanded(layer.id)"
+              :id="`mapped-zones-${layer.id}`"
               :layer-id="layer.id"
               :mapped-zones="mappedZones"
               :is-submitting="isSubmitting"
