@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import  { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import ActionButtons from '@/views/(admin)/users/components/ActionButtons.vue'
 import Header from '@/views/(admin)/users/components/UsersHeader.vue'
 import UsersTable from '@/views/(admin)/users/components/UsersTable.vue'
 import AddUserModal from '@/views/(admin)/users/components/AddUserModal.vue'
-import { TypographyMuted, TypographySmall } from '@/components/typography'
+import { TypographySmall } from '@/components/typography'
 import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
 import { useUsersStore } from '@/stores/users.store'
 
@@ -61,7 +61,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="w-full space-y-5">
+  <section class="w-full space-y-5 p-4 md:p-6">
     <Header
       v-model:search-query="searchQuery"
       v-model:role-filter="roleFilter"
@@ -84,10 +84,9 @@ onMounted(() => {
     >
       {{ usersError }}
     </TypographySmall>
-    <TypographyMuted v-else-if="isLoadingUsers" class="mt-0">Loading users...</TypographyMuted>
-
     <UsersTable
       :rows="filteredRows"
+      :is-loading="isLoadingUsers"
       @refresh="loadUsers"
       @user-deleted="handleUserDeleted"
       @user-updated="handleUserUpdated"

@@ -5,6 +5,7 @@ import type {
   Map as LeafletMap,
 } from 'leaflet'
 import type { BarangayFeatureCollection } from '@/types/map.types'
+import type { Hazard } from '@/types/hazard.types'
 import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
 import {
   getBarangayLabel,
@@ -28,6 +29,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
   let leafletMap: LeafletMap | null = null
   let leafletBarangayLayer: LeafletLayerGroup | null = null
   let leafletMappedZonesLayer: LeafletLayerGroup | null = null
+  let leafletHazardsLayer: LeafletLayerGroup | null = null
   let leafletDrawPreviewLayer: LeafletLayerGroup | null = null
   let mapClickHandler: MapClickHandler | null = null
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
@@ -50,10 +52,12 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
 
     const L = await import('leaflet')
 
-    leafletMap = L.map(options.containerRef.value).setView(
+    leafletMap = L.map(options.containerRef.value, { zoomControl: false }).setView(
       [options.center.lat, options.center.lng],
       14,
     )
+
+    L.control.zoom({ position: 'bottomright' }).addTo(leafletMap)
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -78,6 +82,13 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     }
   }
 
+  function destroyLeafletHazardsLayer(): void {
+    if (leafletHazardsLayer) {
+      leafletHazardsLayer.remove()
+      leafletHazardsLayer = null
+    }
+  }
+
   function destroyLeafletDrawPreviewLayer(): void {
     if (leafletDrawPreviewLayer) {
       leafletDrawPreviewLayer.remove()
@@ -95,6 +106,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
   function destroy(): void {
     destroyLeafletBarangayLayer()
     destroyLeafletMappedZonesLayer()
+    destroyLeafletHazardsLayer()
     destroyLeafletDrawPreviewLayer()
     clearLeafletClickListener()
 
@@ -247,6 +259,79 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     leafletDrawPreviewLayer = layerGroup
   }
 
+  async function renderHazards(showHazards: boolean, hazards: Hazard[]): Promise<void> {
+    if (!leafletMap) {
+      return
+    }
+
+    destroyLeafletHazardsLayer()
+
+    if (!showHazards || hazards.length === 0) {
+      return
+    }
+
+    const L = await import('leaflet')
+    const layerGroup = L.layerGroup()
+
+    hazards.forEach((hazard) => {
+      const buildPopupContent = (): HTMLDivElement => {
+        const container = document.createElement("div");
+        const title = document.createElement("strong")
+        title.textContent = hazard.name
+        const meta = document.createElement("div")
+        meta.textContent =  `${hazard.category} • ${hazard.severity}`
+        container.append(title, document.createElement("br"), meta)
+        return container;
+      }
+
+      if (hazard.geometry.type === 'Point') {
+        const [lng, lat] = hazard.geometry.coordinates
+        L.circleMarker([lat, lng], {
+          radius: 7,
+          color: '#ef4444',
+          weight: 2,
+          fillColor: '#ef4444',
+          fillOpacity: 0.35,
+        })
+          .bindPopup(buildPopupContent)
+          .addTo(layerGroup)
+        return
+      }
+
+      if (hazard.geometry.type === 'LineString') {
+        L.polyline(
+          hazard.geometry.coordinates.map((point) => [point[1], point[0]] as [number, number]),
+          {
+            color: '#f97316',
+            weight: 3,
+            opacity: 0.95,
+          },
+        )
+          .bindPopup(buildPopupContent)
+          .addTo(layerGroup)
+        return
+      }
+
+      L.polygon(
+        hazard.geometry.coordinates.map((ring) =>
+          ring.map((point) => [point[1], point[0]] as [number, number]),
+        ),
+        {
+          color: '#ef4444',
+          weight: 2,
+          opacity: 0.95,
+          fillColor: '#ef4444',
+          fillOpacity: 0.2,
+        },
+      )
+        .bindPopup(buildPopupContent)
+        .addTo(layerGroup)
+    })
+
+    layerGroup.addTo(leafletMap)
+    leafletHazardsLayer = layerGroup
+  }
+
   function setMapClickHandler(handler: MapClickHandler | null): void {
     mapClickHandler = handler
     clearLeafletClickListener()
@@ -290,6 +375,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     destroy,
     renderBarangayBorders,
     renderMappedZones,
+    renderHazards,
     renderDrawPreview,
     setMapClickHandler,
     setDrawMode,

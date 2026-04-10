@@ -9,7 +9,7 @@ const { value, tabs, loading, error, canExport, handleTabChange, handleExport } 
 </script>
 
 <template>
-  <section class="w-full space-y-5">
+  <section class="w-full space-y-5 p-4 md:p-6">
     <ReportsHeader :loading="loading" :error="error">
       <div v-if="!loading && !error" class="space-y-5">
         <TabAndExportButtons

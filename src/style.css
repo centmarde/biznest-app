@@ -69,7 +69,10 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --z-index-10000: 10000;
+  --z-index-10002: 10002;
 }
+
 
 :root {
   --radius: 0.625rem;
@@ -147,6 +150,8 @@
   --sidebar-border: rgb(243 244 244 / 16%);
   --sidebar-ring: #fab95b;
 }
+
+
 
 @layer base {
   * {

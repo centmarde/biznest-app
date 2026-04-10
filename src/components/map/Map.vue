@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { BarangayFeatureCollection, MapProvider } from '@/types/map.types'
+import type { Hazard } from '@/types/hazard.types'
 import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
 import { useGoogleMapAdapter } from '@/composables/map/useGoogleMapAdapter'
 import { useLeafletMapAdapter } from '@/composables/map/useLeafletMapAdapter'
@@ -15,32 +16,20 @@ defineOptions({
 const props = withDefaults(
   defineProps<{
     provider?: MapProvider
-    showBarangayBorders?: boolean
-    barangayBorders?: BarangayFeatureCollection | null
-    mappedZones?: MappedZone[]
-    selectedMappedZoneId?: string | null
-    drawPoints?: MapDrawPoint[]
-    isDrawMode?: boolean
   }>(),
   {
     provider: 'leaflet',
-    showBarangayBorders: false,
-    barangayBorders: null,
-    mappedZones: () => [],
-    selectedMappedZoneId: null,
-    drawPoints: () => [],
-    isDrawMode: false,
   },
 )
 
 const emit = defineEmits<{
-  (e: 'map-click', point: MapDrawPoint): void
-  (e: 'draw-point-move', index: number, point: MapDrawPoint): void
+  (e: 'ready'): void
 }>()
 
 const mapContainer = ref<HTMLDivElement | null>(null)
 const mapError = ref('')
 const butuan = { lat: 8.9475, lng: 125.5406 }
+
 const googleMapsApiKeyMeta = document.querySelector('meta[name="google-maps-api-key"]') as
   | HTMLMetaElement
   | null
@@ -50,7 +39,6 @@ function resolveGoogleMapsApiKey(): string {
   if (googleMapsApiKey.startsWith('%VITE_') && googleMapsApiKey.endsWith('%')) {
     return ''
   }
-
   return googleMapsApiKey
 }
 
@@ -65,6 +53,42 @@ const leafletMapAdapter = useLeafletMapAdapter({
   containerRef: mapContainer,
   center: butuan,
 })
+
+function destroyProviderMaps(): void {
+  leafletMapAdapter.destroy()
+  googleMapAdapter.destroy()
+}
+
+async function initProviderMap(): Promise<void> {
+  mapError.value = ''
+
+  if (props.provider === 'leaflet') {
+    if (mapContainer.value) {
+      mapContainer.value.innerHTML = ''
+    }
+    await leafletMapAdapter.init()
+    emit('ready')
+    return
+  }
+
+  try {
+    await googleMapAdapter.init()
+    emit('ready')
+  } catch (error) {
+    console.warn('Google Maps unavailable', error)
+
+    if (mapContainer.value) {
+      mapContainer.value.innerHTML = ''
+    }
+
+    if (error instanceof Error && error.message) {
+      mapError.value = error.message
+      return
+    }
+
+    mapError.value = 'Google Maps failed to load. Check API key, billing, and allowed referrers.'
+  }
+}
 
 onMounted(async () => {
   await initProviderMap()
@@ -88,186 +112,93 @@ onBeforeUnmount(() => {
   destroyProviderMaps()
 })
 
-watch(
-  () => [props.showBarangayBorders, props.barangayBorders],
-  async () => {
-    await renderBarangayBordersForActiveProvider()
-  },
-  { deep: true },
-)
+// ── Imperative render API (called by parent via template ref) ──────────────
 
-watch(
-  () => props.mappedZones,
-  async () => {
-    await renderMappedZonesForActiveProvider()
-  },
-  { deep: true },
-)
-
-watch(
-  () => props.drawPoints,
-  async () => {
-    await renderDrawPreviewForActiveProvider()
-  },
-  { deep: true },
-)
-
-watch(
-  () => [props.selectedMappedZoneId, props.mappedZones],
-  async () => {
-    await focusSelectedMappedZoneForActiveProvider()
-  },
-  { deep: true },
-)
-
-watch(
-  () => props.isDrawMode,
-  async () => {
-    syncDrawModeForActiveProvider()
-    syncMapClickHandlerForActiveProvider()
-    syncDrawPointMoveHandlerForActiveProvider()
-    await renderDrawPreviewForActiveProvider()
-  },
-)
-
-function destroyProviderMaps(): void {
-  leafletMapAdapter.destroy()
-  googleMapAdapter.destroy()
-}
-
-async function renderBarangayBordersForActiveProvider(): Promise<void> {
+async function renderBarangayBorders(
+  show: boolean,
+  borders: BarangayFeatureCollection | null,
+): Promise<void> {
   if (props.provider === 'leaflet') {
-    await leafletMapAdapter.renderBarangayBorders(
-      Boolean(props.showBarangayBorders),
-      props.barangayBorders ?? null,
-    )
+    await leafletMapAdapter.renderBarangayBorders(show, borders)
     return
   }
-
-  await googleMapAdapter.renderBarangayBorders(
-    Boolean(props.showBarangayBorders),
-    props.barangayBorders ?? null,
-  )
+  await googleMapAdapter.renderBarangayBorders(show, borders)
 }
 
-async function renderMappedZonesForActiveProvider(): Promise<void> {
+async function renderMappedZones(zones: MappedZone[]): Promise<void> {
   if (props.provider === 'leaflet') {
-    await leafletMapAdapter.renderMappedZones(props.mappedZones)
+    await leafletMapAdapter.renderMappedZones(zones)
     return
   }
-
-  await googleMapAdapter.renderMappedZones(props.mappedZones)
+  await googleMapAdapter.renderMappedZones(zones)
 }
 
-async function renderDrawPreviewForActiveProvider(): Promise<void> {
+async function renderHazards(show: boolean, hazards: Hazard[]): Promise<void> {
   if (props.provider === 'leaflet') {
-    await leafletMapAdapter.renderDrawPreview(props.drawPoints)
+    await leafletMapAdapter.renderHazards(show, hazards)
     return
   }
-
-  await googleMapAdapter.renderDrawPreview(props.drawPoints)
+  await googleMapAdapter.renderHazards(show, hazards)
 }
 
-async function focusSelectedMappedZoneForActiveProvider(): Promise<void> {
-  if (!props.selectedMappedZoneId) {
-    return
-  }
-
-  const selectedZone = props.mappedZones.find((zone) => zone.id === props.selectedMappedZoneId)
-  if (!selectedZone || selectedZone.points.length === 0) {
-    return
-  }
-
+async function renderDrawPreview(points: MapDrawPoint[]): Promise<void> {
   if (props.provider === 'leaflet') {
-    await leafletMapAdapter.focusOnZone(selectedZone.points)
+    await leafletMapAdapter.renderDrawPreview(points)
     return
   }
-
-  await googleMapAdapter.focusOnZone(selectedZone.points)
+  await googleMapAdapter.renderDrawPreview(points)
 }
 
-function syncMapClickHandlerForActiveProvider(): void {
-  const handler = props.isDrawMode ? (point: MapDrawPoint) => emit('map-click', point) : null
+async function focusOnZone(points: MapDrawPoint[]): Promise<void> {
+  if (props.provider === 'leaflet') {
+    await leafletMapAdapter.focusOnZone(points)
+    return
+  }
+  await googleMapAdapter.focusOnZone(points)
+}
 
+function setDrawMode(enabled: boolean): void {
+  if (props.provider === 'leaflet') {
+    leafletMapAdapter.setDrawMode(enabled)
+    googleMapAdapter.setDrawMode(false)
+    return
+  }
+  googleMapAdapter.setDrawMode(enabled)
+  leafletMapAdapter.setDrawMode(false)
+}
+
+function setMapClickHandler(handler: ((point: MapDrawPoint) => void) | null): void {
   if (props.provider === 'leaflet') {
     leafletMapAdapter.setMapClickHandler(handler)
     googleMapAdapter.setMapClickHandler(null)
     return
   }
-
   googleMapAdapter.setMapClickHandler(handler)
   leafletMapAdapter.setMapClickHandler(null)
 }
 
-function syncDrawPointMoveHandlerForActiveProvider(): void {
-  const handler = props.isDrawMode
-    ? (index: number, point: MapDrawPoint) => emit('draw-point-move', index, point)
-    : null
-
+function setDrawPointMoveHandler(
+  handler: ((index: number, point: MapDrawPoint) => void) | null,
+): void {
   if (props.provider === 'leaflet') {
     leafletMapAdapter.setDrawPointMoveHandler(handler)
     googleMapAdapter.setDrawPointMoveHandler(null)
     return
   }
-
   googleMapAdapter.setDrawPointMoveHandler(handler)
   leafletMapAdapter.setDrawPointMoveHandler(null)
 }
 
-function syncDrawModeForActiveProvider(): void {
-  if (props.provider === 'leaflet') {
-    leafletMapAdapter.setDrawMode(Boolean(props.isDrawMode))
-    googleMapAdapter.setDrawMode(false)
-    return
-  }
-
-  googleMapAdapter.setDrawMode(Boolean(props.isDrawMode))
-  leafletMapAdapter.setDrawMode(false)
-}
-
-async function initProviderMap() {
-  mapError.value = ''
-
-  if (props.provider === 'leaflet') {
-    if (mapContainer.value) {
-      mapContainer.value.innerHTML = ''
-    }
-
-    await leafletMapAdapter.init()
-    await renderBarangayBordersForActiveProvider()
-    await renderMappedZonesForActiveProvider()
-    await renderDrawPreviewForActiveProvider()
-    await focusSelectedMappedZoneForActiveProvider()
-    syncDrawModeForActiveProvider()
-    syncMapClickHandlerForActiveProvider()
-    syncDrawPointMoveHandlerForActiveProvider()
-    return
-  }
-
-  try {
-    await googleMapAdapter.init()
-    await renderBarangayBordersForActiveProvider()
-    await renderMappedZonesForActiveProvider()
-    await renderDrawPreviewForActiveProvider()
-    await focusSelectedMappedZoneForActiveProvider()
-    syncDrawModeForActiveProvider()
-    syncMapClickHandlerForActiveProvider()
-    syncDrawPointMoveHandlerForActiveProvider()
-  } catch (error) {
-    console.warn('Google Maps unavailable', error)
-
-    if (mapContainer.value) {
-      mapContainer.value.innerHTML = ''
-    }
-
-    if (error instanceof Error && error.message) {
-      mapError.value = error.message
-      return
-    }
-
-    mapError.value = 'Google Maps failed to load. Check API key, billing, and allowed referrers.'
-  }
-}
+defineExpose({
+  renderBarangayBorders,
+  renderMappedZones,
+  renderHazards,
+  renderDrawPreview,
+  focusOnZone,
+  setDrawMode,
+  setMapClickHandler,
+  setDrawPointMoveHandler,
+})
 </script>
 
 <template>
