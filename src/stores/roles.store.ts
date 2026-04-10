@@ -7,6 +7,10 @@ import { useAlertContext } from '@/composables/useAlert'
 export const useRolesStore = defineStore('roles', () => {
   const roles = ref<RoleRow[]>([])
   const isLoading = ref(false)
+  const rolesError = ref<string | null>(null)
+  const hasLoadedRoles = ref(false)
+  let activeLoadRequestId = 0
+  let inFlightLoadRoles: Promise<void> | null = null
 
   const getErrorMessage = (error: unknown): string => {
     return error instanceof Error ? error.message : 'An error occurred'
@@ -20,18 +24,61 @@ export const useRolesStore = defineStore('roles', () => {
     }
   }
 
-  const loadRoles = async () => {
+  const loadRoles = async (options: { force?: boolean } = {}): Promise<void> => {
+    const { force = false } = options
+
+    if (inFlightLoadRoles && !force) {
+      return inFlightLoadRoles
+    }
+
+    if (hasLoadedRoles.value && !force) {
+      return
+    }
+
+    const requestId = ++activeLoadRequestId
+    rolesError.value = null
     isLoading.value = true
+
+    const request = (async () => {
+      try {
+        const fetchedRoles = await fetchRoles()
+
+        // Ignore stale responses when a newer request already started.
+        if (requestId !== activeLoadRequestId) {
+          return
+        }
+
+        roles.value = fetchedRoles
+        hasLoadedRoles.value = true
+      } catch (error: unknown) {
+        // Ignore stale failures from superseded requests.
+        if (requestId !== activeLoadRequestId) {
+          return
+        }
+
+        roles.value = []
+        rolesError.value = getErrorMessage(error)
+
+        getAlert()?.showAlert({
+          title: 'Error loading roles',
+          description: rolesError.value,
+          tone: 'destructive',
+        })
+      } finally {
+        if (requestId === activeLoadRequestId) {
+          isLoading.value = false
+        }
+      }
+    })()
+
+    inFlightLoadRoles = request
+
     try {
-      roles.value = await fetchRoles()
-    } catch (error: unknown) {
-      getAlert()?.showAlert({
-        title: 'Error loading roles',
-        description: getErrorMessage(error),
-        tone: 'destructive',
-      })
+      await request
     } finally {
-      isLoading.value = false
+      if (inFlightLoadRoles === request) {
+        inFlightLoadRoles = null
+      }
     }
   }
 
@@ -83,6 +130,7 @@ export const useRolesStore = defineStore('roles', () => {
   return {
     roles,
     isLoading,
+    rolesError,
     loadRoles,
     addRole,
     removeRole,

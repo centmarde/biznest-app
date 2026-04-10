@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge'
 import { TypographyMuted } from '@/components/typography'
 import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
 import { getRoleBadgeVariant } from '@/utils/roles.utils'
-import { Pencil, Trash2 } from 'lucide-vue-next'
+import { Loader2, Pencil, Trash2 } from 'lucide-vue-next'
 import EditModal from './EditModal.vue'
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue'
 import { deleteUserById } from '@/services/users.service'
@@ -31,9 +31,11 @@ import { useAlertContext } from '@/composables/useAlert'
 const props = withDefaults(
   defineProps<{
     rows?: UserRow[]
+    isLoading?: boolean
   }>(),
   {
     rows: () => [],
+    isLoading: false,
   },
 )
 
@@ -148,7 +150,16 @@ const onUserUpdated = (user: UserRow) => {
         </TableHeader>
 
         <TableBody>
-          <TableRow v-for="row in paginatedRows" :key="row.id">
+          <TableRow v-if="props.isLoading">
+            <TableCell colspan="6" class="px-4 py-10 text-center text-muted-foreground">
+              <span class="inline-flex items-center gap-2">
+                <Loader2 class="size-4 animate-spin" />
+                Loading users...
+              </span>
+            </TableCell>
+          </TableRow>
+
+          <TableRow v-for="row in paginatedRows" v-else :key="row.id">
             <TableCell class="px-4 py-3 font-medium">{{ row.id }}</TableCell>
             <TableCell class="px-4 py-3">{{ row.username }}</TableCell>
             <TableCell class="px-4 py-3 text-muted-foreground">{{ row.email }}</TableCell>
@@ -170,7 +181,7 @@ const onUserUpdated = (user: UserRow) => {
             </TableCell>
           </TableRow>
 
-          <TableRow v-if="!hasRows">
+          <TableRow v-if="!props.isLoading && !hasRows">
             <TableCell colspan="6" class="px-4 py-10 text-center text-muted-foreground">
               <TypographyMuted as="p" class="mt-0">No users found.</TypographyMuted>
             </TableCell>
@@ -179,7 +190,7 @@ const onUserUpdated = (user: UserRow) => {
       </Table>
     </div>
 
-    <Pagination v-if="hasRows" class="justify-end">
+    <Pagination v-if="!props.isLoading && hasRows" class="justify-end">
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious

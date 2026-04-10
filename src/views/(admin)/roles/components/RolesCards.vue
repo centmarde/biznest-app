@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Trash2 } from 'lucide-vue-next'
+import { Loader2, Trash2 } from 'lucide-vue-next'
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue'
 import PermissionModal from '@/views/(admin)/roles/components/PermissionModal.vue'
 import type {
@@ -21,7 +21,9 @@ import {
   togglePermissionPage,
 } from '@/views/(admin)/roles/utils/roles.utils'
 
-defineProps<RolesCardsProps>()
+const props = withDefaults(defineProps<RolesCardsProps>(), {
+  isLoading: false,
+})
 
 const emit = defineEmits<{
   (e: 'deleted', id: string): void
@@ -130,7 +132,17 @@ const savePermissions = async (): Promise<void> => {
 
 <template>
   <div
-    v-if="roles.length === 0"
+    v-if="props.isLoading"
+    class="flex items-center justify-center rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground"
+  >
+    <span class="inline-flex items-center gap-2">
+      <Loader2 class="h-4 w-4 animate-spin" />
+      Loading roles...
+    </span>
+  </div>
+
+  <div
+    v-else-if="props.roles.length === 0"
     class="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center"
   >
     <p class="text-sm text-muted-foreground">No roles found for your search.</p>
@@ -138,7 +150,7 @@ const savePermissions = async (): Promise<void> => {
 
   <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
     <Card
-      v-for="role in roles"
+      v-for="role in props.roles"
       :key="role.id"
       class="group relative flex flex-col cursor-pointer shadow-sm transition-all hover:bg-muted/10 hover:shadow-md"
       @click="openPermissionModal(role)"

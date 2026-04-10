@@ -5,6 +5,7 @@ import RolesHeader from '@/views/(admin)/roles/components/RolesHeader.vue'
 import RolesButtons from '@/views/(admin)/roles/components/RolesButtons.vue'
 import RolesModal from '@/views/(admin)/roles/components/RolesModal.vue'
 import RolesCards from '@/views/(admin)/roles/components/RolesCards.vue'
+import { TypographySmall } from '@/components/typography'
 import type { RoleRow } from '@/views/(admin)/roles/types/roles.types'
 import { getRoleCounts, filterRoleRows } from '@/views/(admin)/roles/utils/roles.utils'
 import { useRolesStore } from '@/stores/roles.store'
@@ -13,7 +14,7 @@ const searchQuery = ref('')
 const addRoleModalOpen = ref(false)
 
 const rolesStore = useRolesStore()
-const { roles } = storeToRefs(rolesStore)
+const { roles, isLoading, rolesError } = storeToRefs(rolesStore)
 const { loadRoles } = rolesStore
 
 const roleCounts = computed(() => getRoleCounts(roles.value))
@@ -25,7 +26,7 @@ const openAddRoleModal = (): void => {
 }
 
 const refreshRoles = async (): Promise<void> => {
-  await loadRoles()
+  await loadRoles({ force: true })
 }
 
 const handleRoleCreated = (newRole: RoleRow): void => {
@@ -40,7 +41,7 @@ const handleRoleCreated = (newRole: RoleRow): void => {
 }
 
 onMounted(() => {
-  loadRoles()
+  void loadRoles()
 })
 </script>
 
@@ -56,7 +57,15 @@ onMounted(() => {
         <RolesButtons @add-role="openAddRoleModal" />
       </template>
     </RolesHeader>
-    <RolesCards :roles="filteredRows" @deleted="refreshRoles" />
+
+    <TypographySmall
+      v-if="rolesError"
+      class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+    >
+      {{ rolesError }}
+    </TypographySmall>
+
+    <RolesCards :roles="filteredRows" :is-loading="isLoading" @deleted="refreshRoles" />
     <RolesModal v-model:isOpen="addRoleModalOpen" @created="handleRoleCreated" />
   </section>
 </template>
