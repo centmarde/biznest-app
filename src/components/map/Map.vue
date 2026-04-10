@@ -30,6 +30,7 @@ const emit = defineEmits<{
 
 const mapContainer = ref<HTMLDivElement | null>(null)
 const mapError = ref('')
+let themeObserver: MutationObserver | null = null
 
 const googleMapsApiKeyMeta = document.querySelector('meta[name="google-maps-api-key"]') as
   | HTMLMetaElement
@@ -46,7 +47,6 @@ function resolveGoogleMapsApiKey(): string {
 const googleMapAdapter = useGoogleMapAdapter({
   containerRef: mapContainer,
   center: props.center,
-  mapId: 'DEMO_MAP_ID',
   getApiKey: resolveGoogleMapsApiKey,
 })
 
@@ -58,6 +58,16 @@ const leafletMapAdapter = useLeafletMapAdapter({
 function destroyProviderMaps(): void {
   leafletMapAdapter.destroy()
   googleMapAdapter.destroy()
+}
+
+function getActiveTheme(): 'light' | 'dark' {
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
+function syncMapThemeWithApp(): void {
+  const activeTheme = getActiveTheme()
+  leafletMapAdapter.setTheme(activeTheme)
+  googleMapAdapter.setTheme(activeTheme)
 }
 
 async function initProviderMap(): Promise<void> {
@@ -92,6 +102,17 @@ async function initProviderMap(): Promise<void> {
 }
 
 onMounted(async () => {
+  syncMapThemeWithApp()
+
+  themeObserver = new MutationObserver(() => {
+    syncMapThemeWithApp()
+  })
+
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  })
+
   await initProviderMap()
 })
 
@@ -110,6 +131,11 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  if (themeObserver) {
+    themeObserver.disconnect()
+    themeObserver = null
+  }
+
   destroyProviderMaps()
 })
 

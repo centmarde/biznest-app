@@ -4,11 +4,17 @@ export interface GoogleMapInstance {
   setCenter: (latLng: { lat: number; lng: number }) => void
   setZoom?: (zoom: number) => void
   getDiv: () => HTMLElement
-  setOptions?: (options: { draggableCursor?: string | null }) => void
+  setOptions?: (options: { draggableCursor?: string | null; styles?: GoogleMapStyleRule[] }) => void
   addListener?: (
     eventName: 'click',
     handler: (event: GoogleMapMouseEvent) => void,
   ) => GoogleMapsEventListener
+}
+
+export interface GoogleMapStyleRule {
+  elementType?: string
+  featureType?: string
+  stylers: Array<Record<string, string | number>>
 }
 
 export interface GoogleLatLng {
@@ -53,7 +59,12 @@ export interface GoogleInfoWindowInstance {
 
 export type GoogleMapCtor = new (
   element: HTMLElement,
-  options: { center: { lat: number; lng: number }; zoom: number; mapId?: string },
+  options: {
+    center: { lat: number; lng: number }
+    zoom: number
+    mapId?: string
+    styles?: GoogleMapStyleRule[]
+  },
 ) => GoogleMapInstance
 
 export interface AdvancedMarkerLibrary {
@@ -112,6 +123,8 @@ export interface MapsLibrary {
 }
 
 export type GoogleWindow = Window & {
+  gm_authFailure?: () => void
+  __googleMapsAuthFailed?: boolean
   google?: {
     maps?: GoogleMapsAPI
   }

@@ -3,6 +3,7 @@ import type { BarangayFeatureCollection } from '@/types/map.types'
 import type { Hazard } from '@/types/hazard.types'
 import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
 import type {
+  GoogleMapStyleRule,
   GoogleInfoWindowInstance,
   GoogleLatLng,
   GoogleMapInstance,
@@ -34,6 +35,22 @@ interface GoogleAdapterOptions {
 
 type MapClickHandler = (point: MapDrawPoint) => void
 type DrawPointMoveHandler = (index: number, point: MapDrawPoint) => void
+type MapThemeMode = 'light' | 'dark'
+
+const GOOGLE_DARK_STYLES: GoogleMapStyleRule[] = [
+  { elementType: 'geometry', stylers: [{ color: '#1f2a44' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#e5e7eb' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#111827' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#3f4f72' }] },
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#1a243a' }] },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#273453' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#2d5b3f' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#334155' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#111827' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#475569' }] },
+  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#384b6f' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f3b5f' }] },
+]
 
 const DRAW_MODE_CURSOR =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 20l4-1 9.5-9.5-3-3L5 16z' fill='%231f2937'/%3E%3Cpath d='M14.5 6.5l3 3 1-1a1.6 1.6 0 000-2.2l-.8-.8a1.6 1.6 0 00-2.2 0z' fill='%230f172a'/%3E%3C/svg%3E\") 2 20, crosshair"
@@ -54,6 +71,17 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
   let mapClickHandler: MapClickHandler | null = null
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
   let isDrawMode = false
+  let currentTheme: MapThemeMode = 'light'
+
+  function applyGoogleTheme(): void {
+    if (!googleMap || !googleMap.setOptions) {
+      return
+    }
+
+    googleMap.setOptions({
+      styles: currentTheme === 'dark' ? GOOGLE_DARK_STYLES : [],
+    })
+  }
 
   function applyGoogleCursor(): void {
     if (!googleMap) {
@@ -404,6 +432,11 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     applyGoogleCursor()
   }
 
+  function setTheme(theme: MapThemeMode): void {
+    currentTheme = theme
+    applyGoogleTheme()
+  }
+
   async function focusOnZone(points: MapDrawPoint[]): Promise<void> {
     if (!googleMap || points.length === 0) {
       return
@@ -440,7 +473,12 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
 
     googleMapsLoader = loadGoogleMapsScript(resolvedGoogleMapsApiKey, googleMapsLoader)
 
-    return googleMapsLoader
+    return googleMapsLoader.then(() => {
+      const googleWindow = window as GoogleWindow
+      if (googleWindow.__googleMapsAuthFailed) {
+        throw new Error('Google Maps authentication failed. Verify API key, billing, and allowed referrers.')
+      }
+    })
   }
 
   async function initializeMapInstance(): Promise<boolean> {
@@ -452,6 +490,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
         googleMap = map
         syncGoogleMapClickListener()
         applyGoogleCursor()
+        applyGoogleTheme()
       },
     })
   }
@@ -486,6 +525,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     renderDrawPreview,
     setMapClickHandler,
     setDrawMode,
+    setTheme,
     setDrawPointMoveHandler,
     focusOnZone,
   }

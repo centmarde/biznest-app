@@ -85,7 +85,7 @@ const {
       <Map ref="mapRef" :provider="provider" :center="mapCenter" @ready="onMapReady" />
 
       <!-- Floating map-provider selector (top-left over the map) -->
-      <div class="absolute left-3 top-3 z-900 flex items-center gap-2">
+      <div class="absolute left-3 top-14 z-900 flex items-center gap-2">
         <Select v-model="provider">
           <SelectTrigger size="sm" class="w-48 bg-card text-foreground dark:bg-card">
             <SelectValue placeholder="Map provider" />
@@ -112,7 +112,7 @@ const {
       <!-- Hazard placement HUD (below provider selector) -->
       <div
         v-if="isHazardPlacementActive"
-        class="absolute left-3 top-14 z-900 rounded-md border bg-card/95 px-3 py-2 shadow"
+        class="absolute left-3 top-24 z-900 rounded-md border bg-card/95 px-3 py-2 shadow"
       >
         <TypographySmall as="p" class="text-xs font-medium">Hazard Placement Active</TypographySmall>
         <TypographyMuted as="p" class="text-xs">
@@ -155,7 +155,7 @@ const {
       <!-- Draw zone HUD (below provider selector) -->
       <div
         v-else-if="isDrawMode"
-        class="absolute left-3 top-14 z-900 rounded-md border bg-card/95 px-3 py-2 shadow"
+        class="absolute left-3 top-24 z-900 rounded-md border bg-card/95 px-3 py-2 shadow"
       >
         <TypographySmall as="p" class="text-xs font-medium">Draw Mode Active</TypographySmall>
         <TypographyMuted as="p" class="text-xs">{{ drawPoints.length }} points</TypographyMuted>
