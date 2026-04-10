@@ -31,6 +31,12 @@ const router = createRouter({
           component: LandingView,
           meta: { requiresGuest: true },
         },
+        {
+          path: 'about',
+          name: 'about',
+          component: LandingView,
+          meta: { requiresGuest: true },
+        },
       ],
     },
     {
@@ -91,14 +97,14 @@ const router = createRouter({
 })
 
 // 3. Set up the Navigation Guard
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
   // Wait for Supabase to finish checking the initial session on page load
   if (!authStore.isInitialized) {
     // We wait for a tiny fraction of a second for the async getSession to finish
     await new Promise((resolve) => {
-      const unwatch = authStore.$subscribe((mutation, state) => {
+      const unwatch = authStore.$subscribe((_mutation, state) => {
         if (state.isInitialized) {
           unwatch()
           resolve(true)
@@ -111,20 +117,18 @@ router.beforeEach(async (to, from, next) => {
 
   // If the route requires auth and the user is NOT logged in -> send to login
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ name: 'login' })
+    return { name: 'login' }
   }
   // If the route requires them to be a guest (like the login page) and they ARE logged in -> send to home
   else if (to.meta.requiresGuest && isAuthenticated) {
-    next({ name: 'test' })
+    return { name: 'dashboard' }
   }
   // If the route requires superadmin and user does not have superadmin role -> send to admin home
   else if (to.meta.requiresSuperadmin && !authStore.isSuperAdmin) {
-    next({ name: 'test' })
+    return { name: 'dashboard' }
   }
   // Otherwise, let them proceed normally
-  else {
-    next()
-  }
+  return true
 })
 
 export default router

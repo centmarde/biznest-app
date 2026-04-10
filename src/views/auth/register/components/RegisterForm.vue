@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { ref, type HTMLAttributes } from 'vue'
+import { computed, onMounted, ref, type HTMLAttributes } from 'vue'
 import { useRouter } from 'vue-router'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Field,
   FieldDescription,
@@ -15,7 +21,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { useAlertContext } from '@/composables/useAlert'
 import { signUpWithEmail } from '@/services/auth.service'
+import { fetchPhilippineCities } from '@/services/cities.service'
+import type { CityOption } from '@/services/cities.service'
 import logoImage from '@/assets/images/logo.png'
+import { Loader2 } from 'lucide-vue-next'
 
 const props = defineProps<{
   class?: HTMLAttributes['class']
@@ -27,15 +36,52 @@ const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const email = ref('')
 const username = ref('')
+const cityId = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const cities = ref<CityOption[]>([])
+const isFetchingCities = ref(false)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
+
+const selectedCityName = computed(() => {
+  if (!cityId.value) {
+    return ''
+  }
+
+  return cities.value.find((city) => city.id === cityId.value)?.name ?? ''
+})
+
+const fetchCities = async (): Promise<void> => {
+  if (cities.value.length > 0) {
+    return
+  }
+
+  isFetchingCities.value = true
+
+  try {
+    cities.value = await fetchPhilippineCities()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : 'Unable to load cities.'
+  } finally {
+    isFetchingCities.value = false
+  }
+}
+
+onMounted(() => {
+  void fetchCities()
+})
 
 const handleSubmit = async (): Promise<void> => {
   errorMessage.value = ''
 
-  if (!email.value || !username.value || !password.value || !confirmPassword.value) {
+  if (
+    !email.value ||
+    !username.value ||
+    !cityId.value ||
+    !password.value ||
+    !confirmPassword.value
+  ) {
     errorMessage.value = 'Please fill in every field.'
     return
   }
@@ -60,6 +106,8 @@ const handleSubmit = async (): Promise<void> => {
       username: username.value,
       email: email.value,
       password: password.value,
+      cityId: cityId.value,
+      city: selectedCityName.value,
       inviteToken,
     })
 
@@ -124,6 +172,37 @@ const handleSubmit = async (): Promise<void> => {
                 autocomplete="username"
                 required
               />
+            </Field>
+            <Field>
+              <FieldLabel for="city"> City </FieldLabel>
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button
+                    id="city"
+                    variant="outline"
+                    class="w-full justify-start font-normal"
+                    :class="!cityId && 'text-muted-foreground'"
+                    :disabled="isFetchingCities || isSubmitting"
+                  >
+                    {{ selectedCityName || 'Select a city' }}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" class="w-[420px] max-h-[300px] overflow-y-auto">
+                  <div v-if="isFetchingCities" class="text-muted-foreground p-3 text-sm">
+                    <Loader2 class="mr-2 inline-block h-4 w-4 animate-spin" />
+                    Loading cities...
+                  </div>
+                  <template v-else>
+                    <DropdownMenuItem
+                      v-for="city in cities"
+                      :key="city.id"
+                      @click="cityId = city.id"
+                    >
+                      {{ city.name }}
+                    </DropdownMenuItem>
+                  </template>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </Field>
             <Field>
               <Field class="grid grid-cols-2 gap-4">

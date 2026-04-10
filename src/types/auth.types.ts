@@ -7,5 +7,7 @@ export interface RegisterPayload {
   username: string
   email: string
   password: string
+  cityId: string
+  city: string
   inviteToken?: string
 }
