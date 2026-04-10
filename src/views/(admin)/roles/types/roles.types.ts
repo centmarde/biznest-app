@@ -34,6 +34,7 @@ export interface RolesHeaderProps {
 
 export interface RolesCardsProps {
   roles: RoleRow[]
+  isLoading?: boolean
 }
 
 export interface RolesModalProps {
