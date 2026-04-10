@@ -31,7 +31,7 @@ import { partners } from '../utils/partners'
         <!-- CTA Buttons -->
         <div class="flex gap-3 mb-6">
           <Button as-child>
-            <RouterLink to="/register">Join BizNest Now</RouterLink>
+            <RouterLink to="/auth/register">Join BizNest Now</RouterLink>
           </Button>
           <Button as-child variant="ghost">
             <RouterLink to="/learn-more">See How AI Helps</RouterLink>

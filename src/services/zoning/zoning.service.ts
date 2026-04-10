@@ -70,18 +70,7 @@ function toMappedZone(row: MappedZoneRpcRow): MappedZone {
   }
 }
 
-async function getAuthenticatedUserId(): Promise<string> {
-  const supabase = getSupabaseClient()
-  const { data, error } = await supabase.auth.getUser()
-
-  if (error || !data.user?.id) {
-    throw new Error('You must be logged in to manage zoning layers.')
-  }
-
-  return data.user.id
-}
-
-export async function listMyZoningLayers(): Promise<ZoningLayer[]> {
+export async function listCityZoningLayers(): Promise<ZoningLayer[]> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from(ZONING_LAYERS_TABLE)
@@ -95,12 +84,12 @@ export async function listMyZoningLayers(): Promise<ZoningLayer[]> {
   return (data ?? []) as ZoningLayer[]
 }
 
+export const listMyZoningLayers = listCityZoningLayers
+
 export async function createZoningLayer(input: CreateZoningLayerInput): Promise<ZoningLayer> {
   const supabase = getSupabaseClient()
-  const userId = await getAuthenticatedUserId()
 
   const payload = {
-    user_id: userId,
     title: input.title.trim(),
     color: input.color,
     description: input.description.trim() || null,
@@ -176,7 +165,7 @@ export async function setZoningLayerActive(
   return data as ZoningLayer
 }
 
-export async function listMyMappedZones(): Promise<MappedZone[]> {
+export async function listCityMappedZones(): Promise<MappedZone[]> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase.rpc('get_my_mapped_zones')
 
@@ -187,6 +176,8 @@ export async function listMyMappedZones(): Promise<MappedZone[]> {
   const rows = (data ?? []) as MappedZoneRpcRow[]
   return rows.map(toMappedZone)
 }
+
+export const listMyMappedZones = listCityMappedZones
 
 export async function createMappedZone(input: CreateMappedZoneInput): Promise<void> {
   const supabase = getSupabaseClient()
