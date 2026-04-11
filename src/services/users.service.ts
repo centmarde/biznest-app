@@ -220,7 +220,6 @@ export const updateUserProfile = async (
   }
 
   if (resolvedCityName !== undefined) {
-    metadataUpdates.city = resolvedCityName
     metadataUpdates.city_name = resolvedCityName
   }
 
