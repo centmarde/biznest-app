@@ -106,8 +106,8 @@ const handleSubmit = async (): Promise<void> => {
       username: username.value,
       email: email.value,
       password: password.value,
-      cityId: cityId.value,
-      city: selectedCityName.value,
+      city_id: cityId.value,
+      city_name: selectedCityName.value,
       inviteToken,
     })
 
