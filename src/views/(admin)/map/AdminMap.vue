@@ -27,6 +27,9 @@ const {
   isHazardSidebarOpen,
   toggleLayerSidebar,
   toggleHazardSidebar,
+  // Map display
+  showMapPoi,
+  toggleMapPoi,
   // Zoning
   isSavingMappedZone,
   isSidebarSubmitting,
@@ -236,6 +239,7 @@ const {
         :layers="zoningLayers"
         :mapped-zones="mappedZones"
         :is-submitting="isSidebarSubmitting"
+        :show-poi="showMapPoi"
         @close="isSidebarOpen = false"
         @start-draw-zone="startDrawZoneMode"
         @submit-layer="handleCreateLayer"
@@ -245,6 +249,7 @@ const {
         @delete-mapped-zone="handleDeleteMappedZone"
         @focus-mapped-zone="handleFocusMappedZone"
         @toggle-layer-visibility="handleToggleLayerVisibility"
+        @toggle-poi="toggleMapPoi"
       />
     </div>
 

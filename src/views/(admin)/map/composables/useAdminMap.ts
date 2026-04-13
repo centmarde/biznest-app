@@ -53,6 +53,9 @@ export function useAdminMap() {
   const isSidebarOpen = ref(false)
   const isHazardSidebarOpen = ref(false)
 
+  // ── Map display state ──────────────────────────────────────────────────────
+  const showMapPoi = ref(false)
+
   // ── Zoning state ───────────────────────────────────────────────────────────
   const isSavingLayer = ref(false)
   const isSavingMappedZone = ref(false)
@@ -573,8 +576,14 @@ export function useAdminMap() {
     )
   }
 
+  function toggleMapPoi(): void {
+    showMapPoi.value = !showMapPoi.value
+    mapRef.value?.setPoisVisible(showMapPoi.value)
+  }
+
   async function onMapReady(): Promise<void> {
     mapRef.value?.setCenter(mapCenter.value, 14)
+    mapRef.value?.setPoisVisible(showMapPoi.value)
     mapRef.value?.setDrawMode(isAnyDrawModeActive.value)
     mapRef.value?.setMapClickHandler(isAnyDrawModeActive.value ? handleMapClick : null)
     mapRef.value?.setDrawPointMoveHandler(isAnyDrawModeActive.value ? handleDrawPointMove : null)
@@ -701,6 +710,9 @@ export function useAdminMap() {
     isHazardSidebarOpen,
     toggleLayerSidebar,
     toggleHazardSidebar,
+    // Map display
+    showMapPoi,
+    toggleMapPoi,
     // Zoning
     isSavingLayer,
     isSavingMappedZone,

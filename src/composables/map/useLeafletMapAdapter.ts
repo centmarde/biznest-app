@@ -26,6 +26,7 @@ type MapThemeMode = 'light' | 'dark'
 
 const LEAFLET_LIGHT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 const LEAFLET_DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+const LEAFLET_LIGHT_NO_POI_TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
 const LEAFLET_LIGHT_ATTRIBUTION = '&copy; OpenStreetMap contributors'
 const LEAFLET_DARK_ATTRIBUTION = '&copy; OpenStreetMap contributors &copy; CARTO'
 
@@ -44,6 +45,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
   let leafletClickListener: ((event: LeafletMouseEvent) => void) | null = null
   let isDrawMode = false
   let currentTheme: MapThemeMode = 'light'
+  let showPoi = false
 
   async function applyLeafletTheme(): Promise<void> {
     if (!leafletMap) {
@@ -57,8 +59,19 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
       leafletBaseTiles = null
     }
 
-    const tileUrl = currentTheme === 'dark' ? LEAFLET_DARK_TILE_URL : LEAFLET_LIGHT_TILE_URL
-    const attribution = currentTheme === 'dark' ? LEAFLET_DARK_ATTRIBUTION : LEAFLET_LIGHT_ATTRIBUTION
+    let tileUrl: string
+    let attribution: string
+
+    if (currentTheme === 'dark') {
+      tileUrl = LEAFLET_DARK_TILE_URL
+      attribution = LEAFLET_DARK_ATTRIBUTION
+    } else if (showPoi) {
+      tileUrl = LEAFLET_LIGHT_TILE_URL
+      attribution = LEAFLET_LIGHT_ATTRIBUTION
+    } else {
+      tileUrl = LEAFLET_LIGHT_NO_POI_TILE_URL
+      attribution = LEAFLET_DARK_ATTRIBUTION
+    }
 
     leafletBaseTiles = L.tileLayer(tileUrl, {
       maxZoom: 19,
@@ -167,6 +180,11 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
 
   function setTheme(theme: MapThemeMode): void {
     currentTheme = theme
+    void applyLeafletTheme()
+  }
+
+  function setPoisVisible(visible: boolean): void {
+    showPoi = visible
     void applyLeafletTheme()
   }
 
@@ -327,7 +345,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
         const title = document.createElement("strong")
         title.textContent = hazard.name
         const meta = document.createElement("div")
-        meta.textContent =  `${hazard.category} • ${hazard.severity}`
+        meta.textContent = hazard.severity
         container.append(title, document.createElement("br"), meta)
         return container;
       }
@@ -429,6 +447,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     setMapClickHandler,
     setDrawMode,
     setTheme,
+    setPoisVisible,
     setDrawPointMoveHandler,
     focusOnZone,
   }

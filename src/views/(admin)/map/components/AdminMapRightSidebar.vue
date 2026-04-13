@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ChevronRight, Eye, EyeOff, Pencil, Plus, Trash2, X } from 'lucide-vue-next'
+import { ChevronRight, Eye, EyeOff, MapPin, MapPinOff, Pencil, Plus, Trash2, X } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,10 +24,12 @@ const props = withDefaults(
     layers: ZoningLayer[]
     mappedZones?: MappedZone[]
     isSubmitting?: boolean
+    showPoi?: boolean
   }>(),
   {
     mappedZones: () => [],
     isSubmitting: false,
+    showPoi: false,
   },
 )
 
@@ -41,6 +43,7 @@ const emit = defineEmits<{
   (e: 'delete-mapped-zone', zoneId: string): void
   (e: 'focus-mapped-zone', zoneId: string): void
   (e: 'toggle-layer-visibility', payload: { layerId: string; isActive: boolean }): void
+  (e: 'toggle-poi'): void
 }>()
 
 const {
@@ -135,6 +138,25 @@ function handleStartDrawZone(): void {
 
           <div class="ml-3 flex items-center gap-1">
             <Badge variant="secondary">{{ layers.length }}</Badge>
+
+            <TooltipProvider :delay-duration="200">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    :class="showPoi ? 'text-foreground' : 'text-muted-foreground'"
+                    @click="emit('toggle-poi')"
+                  >
+                    <MapPin v-if="showPoi" class="h-4 w-4" />
+                    <MapPinOff v-else class="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {{ showPoi ? 'Hide map POI' : 'Show map POI' }}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
             <TooltipProvider :delay-duration="200">
               <Tooltip>
