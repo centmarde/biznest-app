@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { listHazardCategories } from '@/services/hazard/hazard.service'
+import type { HazardCategory } from '@/types/hazard.types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -19,7 +21,6 @@ import {
 import type {
   CreateHazardFormInput,
   Hazard,
-  HazardCategory,
   HazardGeometry,
   HazardGeometryType,
   HazardSeverity,
@@ -82,6 +83,34 @@ const isAddMode = computed(() => props.mode === 'add')
 const canSubmit = computed(() => {
   return form.name.trim().length > 0 && form.category_id.length > 0 && !props.isSubmitting
 })
+
+const fetchedCategories = ref<HazardCategory[]>([])
+const isLoadingCategories = ref(false)
+const categoryFetchError = ref('')
+
+const resolvedCategories = computed(() =>
+  props.categories.length > 0 ? props.categories : fetchedCategories.value,
+)
+
+watch(
+  () => props.open,
+  async (open) => {
+    if (!open) {
+      categoryFetchError.value = ''
+      return
+    }
+    if (resolvedCategories.value.length > 0) return
+    isLoadingCategories.value = true
+    categoryFetchError.value = ''
+    try {
+      fetchedCategories.value = await listHazardCategories()
+    } catch (err) {
+      categoryFetchError.value = err instanceof Error ? err.message : 'Failed to load categories.'
+    } finally {
+      isLoadingCategories.value = false
+    }
+  },
+)
 
 watch(
   () => [props.open, props.mode, props.initialValue],
@@ -224,13 +253,13 @@ function submit(): void {
 
           <div class="space-y-1">
             <label class="text-xs font-medium">Category</label>
-            <Select v-model="form.category_id">
+            <Select v-model="form.category_id" :disabled="isLoadingCategories">
               <SelectTrigger>
-                <SelectValue placeholder="Select category" />
+                <SelectValue :placeholder="isLoadingCategories ? 'Loading…' : 'Select category'" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem
-                  v-for="cat in categories"
+                  v-for="cat in resolvedCategories"
                   :key="cat.id"
                   :value="cat.id"
                 >
@@ -238,6 +267,7 @@ function submit(): void {
                 </SelectItem>
               </SelectContent>
             </Select>
+            <p v-if="categoryFetchError" class="text-xs text-destructive">{{ categoryFetchError }}</p>
           </div>
 
           <div class="space-y-1">

@@ -157,7 +157,6 @@ export const listHazardCategories = async (): Promise<HazardCategory[]> => {
   const { data, error } = await supabase
     .from(HAZARD_CATEGORIES_TABLE)
     .select('*')
-    .eq('is_active', true)
     .order('sort_order', { ascending: true })
 
   if (error) {

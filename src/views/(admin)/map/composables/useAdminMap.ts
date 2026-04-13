@@ -79,7 +79,7 @@ export function useAdminMap() {
   const isSavingHazard = ref(false)
   const hazardError = ref('')
   const selectedHazardId = ref<HazardId | null>(null)
-  const hazardsEnabled = ref(false)
+  const hiddenCategoryIds = ref<string[]>([])
   const hasLoadedHazards = ref(false)
   const hazardPlacementType = ref<HazardGeometryType | null>(null)
   const hazardDrawPoints = ref<MapDrawPoint[]>([])
@@ -100,6 +100,12 @@ export function useAdminMap() {
       (zone) => zone.is_visible && activeLayerIds.has(zone.zoning_layer_id),
     )
   })
+
+  const hiddenCategoryIdSet = computed(() => new Set(hiddenCategoryIds.value))
+
+  const visibleHazards = computed(() =>
+    hazards.value.filter((h) => !hiddenCategoryIdSet.value.has(h.category_id)),
+  )
 
   const isHazardPlacementActive = computed(() => hazardPlacementType.value !== null)
   const activeDrawPoints = computed(() =>
@@ -364,8 +370,12 @@ export function useAdminMap() {
     }
   }
 
-  async function ensureHazardsLoaded(): Promise<void> {
-    await loadHazards(false)
+  function handleToggleCategoryVisibility(categoryId: string): void {
+    if (hiddenCategoryIdSet.value.has(categoryId)) {
+      hiddenCategoryIds.value = hiddenCategoryIds.value.filter((id) => id !== categoryId)
+    } else {
+      hiddenCategoryIds.value = [...hiddenCategoryIds.value, categoryId]
+    }
   }
 
   function startHazardPlacement(placementType: HazardGeometryType): void {
@@ -468,20 +478,12 @@ export function useAdminMap() {
       })
       hazards.value = [createdHazard, ...hazards.value]
       hasLoadedHazards.value = true
-      hazardsEnabled.value = true
       selectedHazardId.value = createdHazard.id
       cancelHazardPlacement()
     } catch (error) {
       hazardError.value = error instanceof Error ? error.message : 'Failed to create hazard.'
     } finally {
       isSavingHazard.value = false
-    }
-  }
-
-  async function handleToggleHazardsEnabled(enabled: boolean): Promise<void> {
-    hazardsEnabled.value = enabled
-    if (enabled) {
-      await ensureHazardsLoaded()
     }
   }
 
@@ -607,7 +609,7 @@ export function useAdminMap() {
         (barangayBorders.value as BarangayFeatureCollection) ?? null,
       ),
       mapRef.value?.renderMappedZones(visibleMappedZones.value),
-      mapRef.value?.renderHazards(hazardsEnabled.value, hazards.value),
+      mapRef.value?.renderHazards(true, visibleHazards.value),
       mapRef.value?.renderDrawPreview(activeDrawPoints.value),
     ])
   }
@@ -644,9 +646,9 @@ export function useAdminMap() {
   }, { deep: true })
 
   watch(
-    [hazardsEnabled, hazards],
-    () => {
-      void mapRef.value?.renderHazards(hazardsEnabled.value, hazards.value)
+    visibleHazards,
+    (visible) => {
+      void mapRef.value?.renderHazards(true, visible)
     },
     { deep: true },
   )
@@ -668,9 +670,9 @@ export function useAdminMap() {
   )
 
   watch(
-    [selectedHazardId, hazards, hazardsEnabled],
+    [selectedHazardId, hazards],
     () => {
-      if (!hazardsEnabled.value || !selectedHazardId.value) return
+      if (!selectedHazardId.value) return
       const hazard = hazards.value.find((h) => h.id === selectedHazardId.value)
       if (hazard) {
         const points = getHazardFocusPoints(hazard)
@@ -703,6 +705,7 @@ export function useAdminMap() {
       loadZoningLayers(),
       loadMappedZones(),
       loadHazardCategories(),
+      loadHazards(),
     ])
   })
 
@@ -761,18 +764,18 @@ export function useAdminMap() {
     // Hazards
     hazardCategories,
     hazards,
+    hiddenCategoryIds,
     isLoadingHazards,
     isSavingHazard,
     hazardError,
     selectedHazardId,
-    hazardsEnabled,
     hazardPlacementType,
     hazardDrawPoints,
     showHazardFormModal,
     isHazardPlacementActive,
     loadHazards,
     handleSaveHazard,
-    handleToggleHazardsEnabled,
+    handleToggleCategoryVisibility,
     handleStartCreateHazard,
     handleSelectHazard,
     handleUpdateHazard,
