@@ -21,7 +21,6 @@ export interface RawUserMetaData {
   role?: string
   city?: string
   city_id?: string
-  cityId?: string
   city_name?: string
   cityName?: string
 }

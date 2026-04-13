@@ -136,13 +136,16 @@ const saveChanges = async () => {
   if (!props.user) return
 
   const resolvedCityId = cityId.value || props.user.cityId || ''
+  const resolvedCityName = selectedCityName.value || props.user.city || ''
   const shouldUpdateCityId = resolvedCityId.length > 0
+  const shouldUpdateCityName = resolvedCityName.length > 0
 
   try {
     isLoading.value = true
     await updateUserProfile(props.user.id, {
       username: username.value,
       role: role.value,
+      city: shouldUpdateCityName ? resolvedCityName : undefined,
       cityId: shouldUpdateCityId ? resolvedCityId : undefined,
     })
 

@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { ChevronRight, Eye, EyeOff, Pencil, Plus, Trash2, X } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TypographyP, TypographySmall } from '@/components/typography'
-import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAdminMapRightSidebar } from '@/views/(admin)/map/composables/useAdminMapRightSidebar'
 import LayerMappedZonesDropdown from '@/views/(admin)/map/components/LayerMappedZonesDropdown.vue'
 import MappedZoneFormModal from '@/views/(admin)/map/components/MappedZoneFormModal.vue'
@@ -77,6 +78,42 @@ const {
   },
   emit,
 )
+
+const expandedLayerIds = ref<Set<string>>(new Set())
+
+function toggleLayerExpanded(layerId: string): void {
+  const next = new Set(expandedLayerIds.value)
+
+  if (next.has(layerId)) {
+    next.delete(layerId)
+  } else {
+    next.add(layerId)
+  }
+
+  expandedLayerIds.value = next
+}
+
+function isLayerExpanded(layerId: string): boolean {
+  return expandedLayerIds.value.has(layerId)
+}
+
+const mappedZoneCountByLayerId = computed<Record<string, number>>(() => {
+  return props.mappedZones.reduce<Record<string, number>>((acc, zone) => {
+    const current = acc[zone.zoning_layer_id] ?? 0
+    acc[zone.zoning_layer_id] = current + 1
+    return acc
+  }, {})
+})
+
+const canStartDrawZone = computed(() => props.layers.length > 0 && !props.isSubmitting)
+
+function handleStartDrawZone(): void {
+  if (!canStartDrawZone.value) {
+    return
+  }
+
+  emit('start-draw-zone')
+}
 </script>
 
 <template>
@@ -84,11 +121,38 @@ const {
     <Card class="flex h-full flex-col rounded-none border-0 shadow-none py-0">
       <CardHeader class="shrink-0 border-b py-4">
         <CardTitle class="flex items-center justify-between text-base">
-          <TypographyP as="span" class="m-0 leading-none">Map Layer</TypographyP>
-          <div class="flex items-center gap-1">
-            <Button variant="ghost" size="icon-sm" title="Draw zone" @click="emit('start-draw-zone')">
-              <Plus class="h-4 w-4" />
-            </Button>
+          <button
+            type="button"
+            class="flex min-w-0 flex-1 items-center gap-2 text-left"
+            @click="showLayerList = !showLayerList"
+          >
+            <TypographyP as="span" class="m-0 leading-none">Zone Layer</TypographyP>
+            <ChevronRight
+              class="h-4 w-4 transition-transform"
+              :class="showLayerList ? 'rotate-90' : ''"
+            />
+          </button>
+
+          <div class="ml-3 flex items-center gap-1">
+            <Badge variant="secondary">{{ layers.length }}</Badge>
+
+            <TooltipProvider :delay-duration="200">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Add zoning layer"
+                    :disabled="isSubmitting"
+                    @click="openAddLayerModal"
+                  >
+                    <Plus class="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Add a new zoning layer</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
             <Button variant="ghost" size="icon-sm" @click="emit('close')">
               <X class="h-4 w-4" />
             </Button>
@@ -97,72 +161,94 @@ const {
       </CardHeader>
 
       <CardContent class="flex-1 space-y-4 overflow-y-auto p-4">
+        <div v-if="showLayerList" class="flex justify-end">
+          <TooltipProvider :delay-duration="200">
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <span
+                  role="button"
+                  tabindex="0"
+                  class="group inline-flex items-center gap-1.5 text-sm font-bold transition-colors"
+                  :class="canStartDrawZone ? 'cursor-pointer text-muted-foreground hover:text-foreground' : 'cursor-not-allowed text-muted-foreground/60'"
+                  :aria-disabled="!canStartDrawZone"
+                  @click="handleStartDrawZone"
+                  @keydown.enter.prevent="handleStartDrawZone"
+                  @keydown.space.prevent="handleStartDrawZone"
+                >
+                  <span class="text-lg font-bold leading-none transition-transform group-hover:-translate-y-px">+</span>
+                  <span class="transition-colors group-hover:underline">Add Mapped Zone</span>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                Add a new mapped zone by drawing on the map.<br />
+                <span class="font-semibold">Make sure to add a zone layer first before adding a mapped zone.</span>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <section class="space-y-2">
-          <button
-            type="button"
-            class="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left"
-            @click="showLayerList = !showLayerList"
-          >
-            <TypographySmall as="span" class="text-sm font-semibold">Zoning Layers</TypographySmall>
-            <Badge variant="secondary" class="ml-auto">{{ layers.length }}</Badge>
-            <ChevronRight
-              class="h-4 w-4 transition-transform"
-              :class="showLayerList ? 'rotate-90' : ''"
-            />
-          </button>
-
-
-
           <div v-if="showLayerList" class="space-y-2">
-          <Button class="w-full" @click="openAddLayerModal">
-            <Plus class="h-4 w-4" />
-            <TypographySmall as="span">Add Zoning Layer</TypographySmall>
-          </Button>
-
-          <Separator />
-
           <div
             v-for="layer in layers"
             :key="layer.id"
-            class="rounded-lg border p-2"
+            class="rounded-md"
           >
-            <div class="flex items-center gap-1">
-              <span
-                class="h-3 w-3 rounded-sm border"
-                :style="{ backgroundColor: layer.color }"
-              />
-              <TypographySmall as="span" class="flex-1 truncate text-sm font-medium">{{ layer.title }}</TypographySmall>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title="Update layer"
-                :disabled="isSubmitting"
-                @click="openEditLayerModal(layer)"
-              >
-                <Pencil class="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title="Delete layer"
-                :disabled="isSubmitting"
-                @click="openDeleteDialog(layer.id)"
-              >
-                <Trash2 class="h-4 w-4 text-destructive" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                :title="layer.is_active ? 'Hide layer zones' : 'Show layer zones'"
-                :disabled="isSubmitting"
-                @click="toggleLayerVisibility(layer)"
-              >
-                <Eye v-if="layer.is_active" class="h-4 w-4" />
-                <EyeOff v-else class="h-4 w-4" />
-              </Button>
+            <div class="w-full">
+              <div class="w-full h-px bg-border/80" />
+              <div class="flex items-center gap-1 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50">
+                <button
+                  type="button"
+                  class="flex min-w-0 flex-1 items-center gap-1 text-left"
+                  :aria-expanded="isLayerExpanded(layer.id)"
+                  :aria-controls="`mapped-zones-${layer.id}`"
+                  @click="toggleLayerExpanded(layer.id)"
+                >
+                  <span
+                    class="h-3 w-3 rounded-sm border"
+                    :style="{ backgroundColor: layer.color }"
+                  />
+                  <TypographySmall as="span" class="flex-1 truncate text-sm font-medium">{{ layer.title }}</TypographySmall>
+                  <Badge variant="secondary">{{ mappedZoneCountByLayerId[layer.id] ?? 0 }}</Badge>
+                  <ChevronRight
+                    class="h-3.5 w-3.5 transition-transform"
+                    :class="isLayerExpanded(layer.id) ? 'rotate-90' : ''"
+                  />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Update layer"
+                  :disabled="isSubmitting"
+                  @click="openEditLayerModal(layer)"
+                >
+                  <Pencil class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Delete layer"
+                  :disabled="isSubmitting"
+                  @click="openDeleteDialog(layer.id)"
+                >
+                  <Trash2 class="h-4 w-4 text-destructive" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :title="layer.is_active ? 'Hide layer zones' : 'Show layer zones'"
+                  :disabled="isSubmitting"
+                  @click="toggleLayerVisibility(layer)"
+                >
+                  <Eye v-if="layer.is_active" class="h-4 w-4" />
+                  <EyeOff v-else class="h-4 w-4" />
+                </Button>
+              </div>
+              <div class="w-full h-px bg-border/80" />
             </div>
 
             <LayerMappedZonesDropdown
+              v-if="isLayerExpanded(layer.id)"
+              :id="`mapped-zones-${layer.id}`"
               :layer-id="layer.id"
               :mapped-zones="mappedZones"
               :is-submitting="isSubmitting"

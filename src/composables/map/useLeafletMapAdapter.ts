@@ -3,6 +3,7 @@ import type {
   LayerGroup as LeafletLayerGroup,
   LeafletMouseEvent,
   Map as LeafletMap,
+  TileLayer as LeafletTileLayer,
 } from 'leaflet'
 import type { BarangayFeatureCollection } from '@/types/map.types'
 import type { Hazard } from '@/types/hazard.types'
@@ -21,12 +22,20 @@ interface LeafletAdapterOptions {
 
 type MapClickHandler = (point: MapDrawPoint) => void
 type DrawPointMoveHandler = (index: number, point: MapDrawPoint) => void
+type MapThemeMode = 'light' | 'dark'
+
+const LEAFLET_LIGHT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+const LEAFLET_DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+const LEAFLET_LIGHT_NO_POI_TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+const LEAFLET_LIGHT_ATTRIBUTION = '&copy; OpenStreetMap contributors'
+const LEAFLET_DARK_ATTRIBUTION = '&copy; OpenStreetMap contributors &copy; CARTO'
 
 const DRAW_MODE_CURSOR =
   'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M4 20l4-1 9.5-9.5-3-3L5 16z\' fill=\'%231f2937\'/%3E%3Cpath d=\'M14.5 6.5l3 3 1-1a1.6 1.6 0 000-2.2l-.8-.8a1.6 1.6 0 00-2.2 0z\' fill=\'%230f172a\'/%3E%3C/svg%3E") 2 20, crosshair'
 
 export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
   let leafletMap: LeafletMap | null = null
+  let leafletBaseTiles: LeafletTileLayer | null = null
   let leafletBarangayLayer: LeafletLayerGroup | null = null
   let leafletMappedZonesLayer: LeafletLayerGroup | null = null
   let leafletHazardsLayer: LeafletLayerGroup | null = null
@@ -35,6 +44,42 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
   let leafletClickListener: ((event: LeafletMouseEvent) => void) | null = null
   let isDrawMode = false
+  let currentTheme: MapThemeMode = 'light'
+  let showPoi = false
+
+  async function applyLeafletTheme(): Promise<void> {
+    if (!leafletMap) {
+      return
+    }
+
+    const L = await import('leaflet')
+
+    if (leafletBaseTiles) {
+      leafletBaseTiles.remove()
+      leafletBaseTiles = null
+    }
+
+    let tileUrl: string
+    let attribution: string
+
+    if (currentTheme === 'dark') {
+      tileUrl = LEAFLET_DARK_TILE_URL
+      attribution = LEAFLET_DARK_ATTRIBUTION
+    } else if (showPoi) {
+      tileUrl = LEAFLET_LIGHT_TILE_URL
+      attribution = LEAFLET_LIGHT_ATTRIBUTION
+    } else {
+      tileUrl = LEAFLET_LIGHT_NO_POI_TILE_URL
+      attribution = LEAFLET_DARK_ATTRIBUTION
+    }
+
+    leafletBaseTiles = L.tileLayer(tileUrl, {
+      maxZoom: 19,
+      attribution,
+    })
+
+    leafletBaseTiles.addTo(leafletMap)
+  }
 
   function applyLeafletCursor(): void {
     if (!leafletMap) {
@@ -57,15 +102,21 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
       14,
     )
 
+    leafletMap.attributionControl.setPrefix(false)
+
     L.control.zoom({ position: 'bottomright' }).addTo(leafletMap)
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(leafletMap)
+    await applyLeafletTheme()
 
-    L.marker([options.center.lat, options.center.lng]).addTo(leafletMap).bindPopup('Butuan City')
     applyLeafletCursor()
+  }
+
+  function setCenter(center: { lat: number; lng: number }, zoom = 14): void {
+    if (!leafletMap) {
+      return
+    }
+
+    leafletMap.setView([center.lat, center.lng], zoom)
   }
 
   function destroyLeafletBarangayLayer(): void {
@@ -110,6 +161,11 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     destroyLeafletDrawPreviewLayer()
     clearLeafletClickListener()
 
+    if (leafletBaseTiles) {
+      leafletBaseTiles.remove()
+      leafletBaseTiles = null
+    }
+
     if (leafletMap) {
       leafletMap.getContainer().style.cursor = ''
       leafletMap.remove()
@@ -120,6 +176,16 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
   function setDrawMode(enabled: boolean): void {
     isDrawMode = enabled
     applyLeafletCursor()
+  }
+
+  function setTheme(theme: MapThemeMode): void {
+    currentTheme = theme
+    void applyLeafletTheme()
+  }
+
+  function setPoisVisible(visible: boolean): void {
+    showPoi = visible
+    void applyLeafletTheme()
   }
 
   function setDrawPointMoveHandler(handler: DrawPointMoveHandler | null): void {
@@ -279,7 +345,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
         const title = document.createElement("strong")
         title.textContent = hazard.name
         const meta = document.createElement("div")
-        meta.textContent =  `${hazard.category} • ${hazard.severity}`
+        meta.textContent = hazard.severity
         container.append(title, document.createElement("br"), meta)
         return container;
       }
@@ -373,12 +439,15 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
   return {
     init,
     destroy,
+    setCenter,
     renderBarangayBorders,
     renderMappedZones,
     renderHazards,
     renderDrawPreview,
     setMapClickHandler,
     setDrawMode,
+    setTheme,
+    setPoisVisible,
     setDrawPointMoveHandler,
     focusOnZone,
   }

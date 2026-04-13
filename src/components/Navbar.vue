@@ -10,7 +10,7 @@ import logoImage from '@/assets/images/logo.png'
 </script>
 
 <template>
-  <nav class="sticky top-0 z-50 border-b bg-card/70 backdrop-blur">
+  <nav class="sticky top-0 z-[2000] border-b bg-card/70 backdrop-blur">
     <div class="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between px-4">
       <RouterLink
         to="/"

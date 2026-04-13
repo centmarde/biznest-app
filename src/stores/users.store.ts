@@ -22,9 +22,12 @@ export const useUsersStore = defineStore('users', () => {
   const rows = ref<UserRow[]>([])
   const isLoadingUsers = ref(false)
   const usersError = ref<string | null>(null)
+  const hasLoadedUsers = ref(false)
   const searchQuery = ref('')
   const roleFilter = ref<UserRoleFilter>('all')
   const addUserModalOpen = ref(false)
+  let activeLoadRequestId = 0
+  let inFlightLoadUsers: Promise<void> | null = null
 
   const getAlert = () => {
     try {
@@ -40,24 +43,62 @@ export const useUsersStore = defineStore('users', () => {
 
   const roleCounts = computed(() => getUserRoleCounts(rows.value))
 
-  const loadUsers = async (): Promise<void> => {
-    isLoadingUsers.value = true
+  const loadUsers = async (options: { force?: boolean } = {}): Promise<void> => {
+    const { force = false } = options
+
+    if (inFlightLoadUsers && !force) {
+      return inFlightLoadUsers
+    }
+
+    if (hasLoadedUsers.value && !force) {
+      return
+    }
+
+    const requestId = ++activeLoadRequestId
     usersError.value = null
+    isLoadingUsers.value = true
+
+    const request = (async () => {
+      try {
+        const fetchedRows = await fetchAllUsers()
+
+        // Ignore stale responses when a newer request already started.
+        if (requestId !== activeLoadRequestId) {
+          return
+        }
+
+        rows.value = fetchedRows
+        hasLoadedUsers.value = true
+      } catch (error: unknown) {
+        // Ignore stale failures from superseded requests.
+        if (requestId !== activeLoadRequestId) {
+          return
+        }
+
+        rows.value = []
+        const message = getErrorMessage(error, 'Unable to load users right now.')
+        usersError.value = message
+
+        getAlert()?.showAlert({
+          title: 'Error loading users',
+          description: message,
+          tone: 'destructive',
+        })
+      } finally {
+        if (requestId === activeLoadRequestId) {
+          isLoadingUsers.value = false
+        }
+      }
+    })()
+
+    inFlightLoadUsers = request
 
     try {
-      rows.value = await fetchAllUsers()
-    } catch (error: unknown) {
-      rows.value = []
-      const message = getErrorMessage(error, 'Unable to load users right now.')
-      usersError.value = message
-
-      getAlert()?.showAlert({
-        title: 'Error loading users',
-        description: message,
-        tone: 'destructive',
-      })
+      await request
     } finally {
-      isLoadingUsers.value = false
+      if (inFlightLoadUsers === request) {
+        inFlightLoadUsers = null
+      }
     }
   }
 

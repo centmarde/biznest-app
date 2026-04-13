@@ -28,6 +28,11 @@ export function loadGoogleMapsScript(
     return existingLoader
   }
 
+  googleWindow.__googleMapsAuthFailed = false
+  googleWindow.gm_authFailure = () => {
+    googleWindow.__googleMapsAuthFailed = true
+  }
+
   return new Promise((resolve, reject) => {
     const existingScript = document.getElementById('google-maps-sdk') as HTMLScriptElement | null
 
@@ -46,7 +51,15 @@ export function loadGoogleMapsScript(
     script.src = `https://maps.googleapis.com/maps/api/js?key=${resolvedGoogleMapsApiKey}&loading=async&libraries=marker&v=weekly`
     script.async = true
     script.defer = true
-    script.onload = () => resolve()
+    script.onload = () => {
+      // gm_authFailure is invoked by the Google SDK when key auth or billing checks fail.
+      if (googleWindow.__googleMapsAuthFailed) {
+        reject(new Error('Google Maps authentication failed. Verify API key, billing, and allowed referrers.'))
+        return
+      }
+
+      resolve()
+    }
     script.onerror = () => reject(new Error('Google Maps failed to load'))
     document.head.appendChild(script)
   })
@@ -82,10 +95,11 @@ export async function initializeGoogleMapInstance(options: {
     }
   }
 
-  if (typeof googleMaps.importLibrary === 'function') {
+  // Advanced Markers require a valid mapId; skip when not configured.
+  if (options.mapId && typeof googleMaps.importLibrary === 'function') {
     const markerLibrary = (await googleMaps.importLibrary('marker')) as unknown as AdvancedMarkerLibrary
     AdvancedMarkerElement = markerLibrary.AdvancedMarkerElement
-  } else {
+  } else if (options.mapId) {
     AdvancedMarkerElement = googleMaps.marker?.AdvancedMarkerElement
   }
 

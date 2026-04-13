@@ -8,6 +8,7 @@ import Button from '@/components/ui/button/Button.vue'
 import TypographyH1 from '@/components/typography/TypographyH1.vue'
 import TypographyMuted from '@/components/typography/TypographyMuted.vue'
 import TypographyList from '@/components/typography/TypographyList.vue'
+import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import { partners } from '../utils/partners'
 </script>
 
@@ -31,7 +32,7 @@ import { partners } from '../utils/partners'
         <!-- CTA Buttons -->
         <div class="flex gap-3 mb-6">
           <Button as-child>
-            <RouterLink to="/register">Join BizNest Now</RouterLink>
+            <RouterLink to="/auth/register">Join BizNest Now</RouterLink>
           </Button>
           <Button as-child variant="ghost">
             <RouterLink to="/learn-more">See How AI Helps</RouterLink>
@@ -62,10 +63,12 @@ import { partners } from '../utils/partners'
         <div
           class="w-full max-w-lg aspect-[4/3] rounded-2xl overflow-hidden bg-white/10 border border-white/10 shadow-xl"
         >
-          <img
-            src="https://placehold.co/800x600/1a1a2e/ffffff?text=App+Preview"
-            alt="App preview"
-            class="w-full h-full object-cover opacity-80"
+          <DotLottieVue
+            src="/map-browsing.lottie"
+            autoplay
+            loop
+            class="h-full w-full opacity-90"
+            aria-label="Map browsing preview animation"
           />
         </div>
       </div>

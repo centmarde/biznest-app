@@ -16,9 +16,11 @@ defineOptions({
 const props = withDefaults(
   defineProps<{
     provider?: MapProvider
+    center?: { lat: number; lng: number }
   }>(),
   {
     provider: 'leaflet',
+    center: () => ({ lat: 8.9475, lng: 125.5406 }),
   },
 )
 
@@ -28,7 +30,7 @@ const emit = defineEmits<{
 
 const mapContainer = ref<HTMLDivElement | null>(null)
 const mapError = ref('')
-const butuan = { lat: 8.9475, lng: 125.5406 }
+let themeObserver: MutationObserver | null = null
 
 const googleMapsApiKeyMeta = document.querySelector('meta[name="google-maps-api-key"]') as
   | HTMLMetaElement
@@ -44,19 +46,28 @@ function resolveGoogleMapsApiKey(): string {
 
 const googleMapAdapter = useGoogleMapAdapter({
   containerRef: mapContainer,
-  center: butuan,
-  mapId: 'DEMO_MAP_ID',
+  center: props.center,
   getApiKey: resolveGoogleMapsApiKey,
 })
 
 const leafletMapAdapter = useLeafletMapAdapter({
   containerRef: mapContainer,
-  center: butuan,
+  center: props.center,
 })
 
 function destroyProviderMaps(): void {
   leafletMapAdapter.destroy()
   googleMapAdapter.destroy()
+}
+
+function getActiveTheme(): 'light' | 'dark' {
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
+function syncMapThemeWithApp(): void {
+  const activeTheme = getActiveTheme()
+  leafletMapAdapter.setTheme(activeTheme)
+  googleMapAdapter.setTheme(activeTheme)
 }
 
 async function initProviderMap(): Promise<void> {
@@ -91,6 +102,17 @@ async function initProviderMap(): Promise<void> {
 }
 
 onMounted(async () => {
+  syncMapThemeWithApp()
+
+  themeObserver = new MutationObserver(() => {
+    syncMapThemeWithApp()
+  })
+
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  })
+
   await initProviderMap()
 })
 
@@ -109,8 +131,30 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  if (themeObserver) {
+    themeObserver.disconnect()
+    themeObserver = null
+  }
+
   destroyProviderMaps()
 })
+
+watch(
+  () => props.center,
+  (center) => {
+    if (!center) {
+      return
+    }
+
+    if (props.provider === 'leaflet') {
+      leafletMapAdapter.setCenter(center)
+      return
+    }
+
+    googleMapAdapter.setCenter(center)
+  },
+  { deep: true },
+)
 
 // ── Imperative render API (called by parent via template ref) ──────────────
 
@@ -189,6 +233,23 @@ function setDrawPointMoveHandler(
   leafletMapAdapter.setDrawPointMoveHandler(null)
 }
 
+function setCenter(center: { lat: number; lng: number }, zoom = 14): void {
+  if (props.provider === 'leaflet') {
+    leafletMapAdapter.setCenter(center, zoom)
+    return
+  }
+
+  googleMapAdapter.setCenter(center, zoom)
+}
+
+function setPoisVisible(visible: boolean): void {
+  if (props.provider === 'leaflet') {
+    leafletMapAdapter.setPoisVisible(visible)
+    return
+  }
+  googleMapAdapter.setPoisVisible(visible)
+}
+
 defineExpose({
   renderBarangayBorders,
   renderMappedZones,
@@ -198,18 +259,20 @@ defineExpose({
   setDrawMode,
   setMapClickHandler,
   setDrawPointMoveHandler,
+  setCenter,
+  setPoisVisible,
 })
 </script>
 
 <template>
-  <div class="relative w-full h-full">
+  <div class="relative h-full w-full z-0">
     <div
       v-if="mapError"
       class="absolute left-3 top-3 z-50 rounded-md border border-destructive/45 bg-destructive/12 px-3 py-2 text-xs text-destructive shadow"
     >
       {{ mapError }}
     </div>
-    <div ref="mapContainer" class="h-full w-full"></div>
+    <div ref="mapContainer" class="absolute inset-0 z-0"></div>
   </div>
 </template>
 

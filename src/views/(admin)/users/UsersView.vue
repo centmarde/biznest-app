@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import  { onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import ActionButtons from '@/views/(admin)/users/components/ActionButtons.vue'
 import Header from '@/views/(admin)/users/components/UsersHeader.vue'
@@ -55,6 +55,10 @@ const handleUserUpdated = (user: UserRow) => {
   upsertUser(user)
 }
 
+const handleRefreshUsers = async () => {
+  await loadUsers({ force: true })
+}
+
 onMounted(() => {
   void loadUsers()
 })
@@ -87,7 +91,7 @@ onMounted(() => {
     <UsersTable
       :rows="filteredRows"
       :is-loading="isLoadingUsers"
-      @refresh="loadUsers"
+      @refresh="handleRefreshUsers"
       @user-deleted="handleUserDeleted"
       @user-updated="handleUserUpdated"
     />

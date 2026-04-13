@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { listHazardCategories } from '@/services/hazard/hazard.service'
+import type { HazardCategory } from '@/types/hazard.types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -39,12 +41,14 @@ const props = withDefaults(
   defineProps<{
     open: boolean
     mode: 'add' | 'edit'
+    categories?: HazardCategory[]
     isSubmitting?: boolean
     initialValue?: Hazard | null
     placementType?: HazardGeometryType | null
     pointCount?: number
   }>(),
   {
+    categories: () => [],
     isSubmitting: false,
     initialValue: null,
     placementType: null,
@@ -60,7 +64,7 @@ const emit = defineEmits<{
 
 const form = reactive({
   name: '',
-  category: '',
+  category_id: '',
   severity: 'low' as HazardSeverity,
   status: 'reported' as HazardStatus,
   location_name: '',
@@ -77,8 +81,36 @@ const modalTitle = computed(() => (props.mode === 'add' ? 'Add Hazard' : 'Update
 const submitLabel = computed(() => (props.mode === 'add' ? 'Create Hazard' : 'Update Hazard'))
 const isAddMode = computed(() => props.mode === 'add')
 const canSubmit = computed(() => {
-  return form.name.trim().length > 0 && form.category.trim().length > 0 && !props.isSubmitting
+  return form.name.trim().length > 0 && form.category_id.length > 0 && !props.isSubmitting
 })
+
+const fetchedCategories = ref<HazardCategory[]>([])
+const isLoadingCategories = ref(false)
+const categoryFetchError = ref('')
+
+const resolvedCategories = computed(() =>
+  props.categories.length > 0 ? props.categories : fetchedCategories.value,
+)
+
+watch(
+  () => props.open,
+  async (open) => {
+    if (!open) {
+      categoryFetchError.value = ''
+      return
+    }
+    if (resolvedCategories.value.length > 0) return
+    isLoadingCategories.value = true
+    categoryFetchError.value = ''
+    try {
+      fetchedCategories.value = await listHazardCategories()
+    } catch (err) {
+      categoryFetchError.value = err instanceof Error ? err.message : 'Failed to load categories.'
+    } finally {
+      isLoadingCategories.value = false
+    }
+  },
+)
 
 watch(
   () => [props.open, props.mode, props.initialValue],
@@ -91,7 +123,7 @@ watch(
 
     if (props.mode === 'edit' && props.initialValue) {
       form.name = props.initialValue.name
-      form.category = props.initialValue.category
+      form.category_id = props.initialValue.category_id
       form.severity = props.initialValue.severity
       form.status = props.initialValue.status
       form.location_name = props.initialValue.location_name ?? ''
@@ -102,7 +134,7 @@ watch(
     }
 
     form.name = ''
-    form.category = ''
+    form.category_id = ''
     form.severity = 'low'
     form.status = 'reported'
     form.location_name = ''
@@ -177,7 +209,7 @@ function submit(): void {
 
   const basePayload = {
     name: form.name.trim(),
-    category: form.category.trim(),
+    category_id: form.category_id,
     severity: form.severity,
     status: form.status,
     location_name: form.location_name.trim() || null,
@@ -221,7 +253,21 @@ function submit(): void {
 
           <div class="space-y-1">
             <label class="text-xs font-medium">Category</label>
-            <Input v-model="form.category" placeholder="e.g. flood" />
+            <Select v-model="form.category_id" :disabled="isLoadingCategories">
+              <SelectTrigger>
+                <SelectValue :placeholder="isLoadingCategories ? 'Loading…' : 'Select category'" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="cat in resolvedCategories"
+                  :key="cat.id"
+                  :value="cat.id"
+                >
+                  {{ cat.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p v-if="categoryFetchError" class="text-xs text-destructive">{{ categoryFetchError }}</p>
           </div>
 
           <div class="space-y-1">

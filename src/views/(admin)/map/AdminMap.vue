@@ -9,12 +9,13 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
-import { Globe, Layers, TriangleAlert } from 'lucide-vue-next'
+import { Globe, Layers, MapPin, MapPinOff, TriangleAlert } from 'lucide-vue-next'
 
 const {
   // Map
   provider,
   mapRef,
+  mapCenter,
   onMapReady,
   // Barangay borders
   isLoading,
@@ -26,6 +27,9 @@ const {
   isHazardSidebarOpen,
   toggleLayerSidebar,
   toggleHazardSidebar,
+  // Map display
+  showMapPoi,
+  toggleMapPoi,
   // Zoning
   isSavingMappedZone,
   isSidebarSubmitting,
@@ -49,19 +53,20 @@ const {
   handleDeleteMappedZone,
   handleFocusMappedZone,
   // Hazards
+  hazardCategories,
   hazards,
+  hiddenCategoryIds,
   isLoadingHazards,
   isSavingHazard,
   hazardError,
   selectedHazardId,
-  hazardsEnabled,
   hazardPlacementType,
   hazardDrawPoints,
   showHazardFormModal,
   isHazardPlacementActive,
   loadHazards,
   handleSaveHazard,
-  handleToggleHazardsEnabled,
+  handleToggleCategoryVisibility,
   handleStartCreateHazard,
   handleSelectHazard,
   handleUpdateHazard,
@@ -77,16 +82,16 @@ const {
     Map fills the entire main content area.
     Layout (left → right): [map canvas] [hazard panel?] [layer panel?] [icon strip]
   -->
-  <div class="flex h-full w-full overflow-hidden">
+  <div class="relative h-full w-full overflow-hidden">
 
     <!-- ── Map canvas ────────────────────────────────────────────────── -->
-    <div class="relative min-w-0 flex-1">
-      <Map ref="mapRef" :provider="provider" @ready="onMapReady" />
+    <div class="relative h-full w-full">
+      <Map ref="mapRef" :provider="provider" :center="mapCenter" @ready="onMapReady" />
 
       <!-- Floating map-provider selector (top-left over the map) -->
-      <div class="absolute left-3 top-3 z-900 flex items-center gap-2">
+      <div class="absolute left-1/2 top-3 z-900 flex -translate-x-1/2 items-center gap-2">
         <Select v-model="provider">
-          <SelectTrigger class="h-8 w-48 bg-card/90 text-xs shadow backdrop-blur-sm">
+          <SelectTrigger size="sm" class="w-48 bg-card text-foreground dark:bg-card">
             <SelectValue placeholder="Map provider" />
           </SelectTrigger>
           <SelectContent>
@@ -111,7 +116,7 @@ const {
       <!-- Hazard placement HUD (below provider selector) -->
       <div
         v-if="isHazardPlacementActive"
-        class="absolute left-3 top-14 z-900 rounded-md border bg-card/95 px-3 py-2 shadow"
+        class="absolute left-3 top-24 z-900 rounded-md border bg-card/95 px-3 py-2 shadow"
       >
         <TypographySmall as="p" class="text-xs font-medium">Hazard Placement Active</TypographySmall>
         <TypographyMuted as="p" class="text-xs">
@@ -154,7 +159,7 @@ const {
       <!-- Draw zone HUD (below provider selector) -->
       <div
         v-else-if="isDrawMode"
-        class="absolute left-3 top-14 z-900 rounded-md border bg-card/95 px-3 py-2 shadow"
+        class="absolute left-3 top-24 z-900 rounded-md border bg-card/95 px-3 py-2 shadow"
       >
         <TypographySmall as="p" class="text-xs font-medium">Draw Mode Active</TypographySmall>
         <TypographyMuted as="p" class="text-xs">{{ drawPoints.length }} points</TypographyMuted>
@@ -188,6 +193,7 @@ const {
       <HazardFormModal
         :open="showHazardFormModal"
         mode="add"
+        :categories="hazardCategories"
         :is-submitting="isSavingHazard"
         :placement-type="hazardPlacementType"
         :point-count="hazardDrawPoints.length"
@@ -205,42 +211,51 @@ const {
     </div>
 
     <!-- ── Hazard panel (inline, left of icon strip) ──────────────── -->
-    <AdminMapHazardSidebar
+    <div
       v-if="isHazardSidebarOpen"
-      :hazards="hazards"
-      :is-enabled="hazardsEnabled"
-      :is-loading="isLoadingHazards"
-      :is-submitting="isSavingHazard"
-      :error-message="hazardError"
-      :selected-hazard-id="selectedHazardId"
-      @close="isHazardSidebarOpen = false"
-      @refresh="loadHazards(true)"
-      @toggle-enabled="handleToggleHazardsEnabled"
-      @select-hazard="handleSelectHazard"
-      @start-create-hazard="handleStartCreateHazard"
-      @update-hazard="handleUpdateHazard"
-      @delete-hazard="handleDeleteHazard"
-    />
+      class="absolute inset-y-0 right-11 z-1000"
+    >
+      <AdminMapHazardSidebar
+        :hazards="hazards"
+        :categories="hazardCategories"
+        :hidden-category-ids="hiddenCategoryIds"
+        :is-loading="isLoadingHazards"
+        :is-submitting="isSavingHazard"
+        :error-message="hazardError"
+        :selected-hazard-id="selectedHazardId"
+        @close="isHazardSidebarOpen = false"
+        @refresh="loadHazards(true)"
+        @toggle-category="handleToggleCategoryVisibility"
+        @select-hazard="handleSelectHazard"
+        @start-create-hazard="handleStartCreateHazard"
+        @update-hazard="handleUpdateHazard"
+        @delete-hazard="handleDeleteHazard"
+      />
+    </div>
 
     <!-- ── Layer panel (inline, left of icon strip) ───────────────── -->
-    <AdminMapRightSidebar
+    <div
       v-if="isSidebarOpen"
-      :layers="zoningLayers"
-      :mapped-zones="mappedZones"
-      :is-submitting="isSidebarSubmitting"
-      @close="isSidebarOpen = false"
-      @start-draw-zone="startDrawZoneMode"
-      @submit-layer="handleCreateLayer"
-      @update-layer="handleUpdateLayer"
-      @delete-layer="handleDeleteLayer"
-      @update-mapped-zone="handleUpdateMappedZone"
-      @delete-mapped-zone="handleDeleteMappedZone"
-      @focus-mapped-zone="handleFocusMappedZone"
-      @toggle-layer-visibility="handleToggleLayerVisibility"
-    />
+      class="absolute inset-y-0 right-11 z-1000"
+    >
+      <AdminMapRightSidebar
+        :layers="zoningLayers"
+        :mapped-zones="mappedZones"
+        :is-submitting="isSidebarSubmitting"
+        @close="isSidebarOpen = false"
+        @start-draw-zone="startDrawZoneMode"
+        @submit-layer="handleCreateLayer"
+        @update-layer="handleUpdateLayer"
+        @delete-layer="handleDeleteLayer"
+        @update-mapped-zone="handleUpdateMappedZone"
+        @delete-mapped-zone="handleDeleteMappedZone"
+        @focus-mapped-zone="handleFocusMappedZone"
+        @toggle-layer-visibility="handleToggleLayerVisibility"
+      />
+    </div>
 
     <!-- ── Vertical icon strip (always visible) ───────────────────── -->
-    <div class="flex w-11 shrink-0 flex-col border-l bg-card">
+    <div class="absolute inset-y-0 right-0 z-1001 flex w-11 shrink-0 flex-col border-l bg-card">
       <TooltipProvider :delay-duration="300">
 
         <!-- Layers -->
@@ -295,6 +310,25 @@ const {
           </TooltipContent>
         </Tooltip>
 
+        <div class="h-px bg-border" />
+
+        <!-- Map POI -->
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <button
+              type="button"
+              class="flex h-11 w-full items-center justify-center transition-colors hover:bg-muted"
+              :class="showMapPoi ? 'bg-muted text-foreground' : 'text-muted-foreground'"
+              @click="toggleMapPoi"
+            >
+              <MapPin v-if="showMapPoi" class="h-4 w-4" />
+              <MapPinOff v-else class="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            {{ showMapPoi ? 'Hide Map POI' : 'Show Map POI' }}
+          </TooltipContent>
+        </Tooltip>
 
       </TooltipProvider>
     </div>

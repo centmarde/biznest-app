@@ -3,6 +3,7 @@ import { useBarangayBorders } from '@/composables/map/useBarangayBorders.ts'
 import {
   createHazard,
   deleteHazard,
+  listHazardCategories,
   listHazards,
   updateHazard,
 } from '@/services/hazard/hazard.service.ts'
@@ -11,15 +12,18 @@ import {
   createZoningLayer,
   deleteMappedZone,
   deleteZoningLayer,
-  listMyMappedZones,
-  listMyZoningLayers,
+  listCityMappedZones,
+  listCityZoningLayers,
   setZoningLayerActive,
   updateMappedZone,
   updateZoningLayer,
 } from '@/services/zoning/zoning.service.ts'
+import { resolveCityCenter } from '@/services/cities.service.ts'
+import { getSupabaseClient } from '@/services/supabase.client.ts'
 import type {
   CreateHazardFormInput,
   Hazard,
+  HazardCategory,
   HazardGeometry,
   HazardGeometryType,
   HazardId,
@@ -39,8 +43,9 @@ import type Map from '@/components/map/Map.vue'
 
 export function useAdminMap() {
   // ── Map state ──────────────────────────────────────────────────────────────
-  const provider = ref<'google' | 'leaflet'>('leaflet')
+  const provider = ref<'google' | 'leaflet'>('google')
   const mapRef = ref<InstanceType<typeof Map> | null>(null)
+  const mapCenter = ref({ lat: 8.9475, lng: 125.5406 })
 
   // ── Barangay borders ───────────────────────────────────────────────────────
   const { barangayBorders, isLoading, errorMessage, loadBarangayBorders } = useBarangayBorders()
@@ -49,6 +54,9 @@ export function useAdminMap() {
   // ── Sidebar UI state ───────────────────────────────────────────────────────
   const isSidebarOpen = ref(false)
   const isHazardSidebarOpen = ref(false)
+
+  // ── Map display state ──────────────────────────────────────────────────────
+  const showMapPoi = ref(false)
 
   // ── Zoning state ───────────────────────────────────────────────────────────
   const isSavingLayer = ref(false)
@@ -64,16 +72,20 @@ export function useAdminMap() {
   const selectedMappedZoneId = ref<string | null>(null)
 
   // ── Hazard state ───────────────────────────────────────────────────────────
+  const cityId = ref<string | null>(null)
+  const hazardCategories = ref<HazardCategory[]>([])
   const hazards = ref<Hazard[]>([])
   const isLoadingHazards = ref(false)
   const isSavingHazard = ref(false)
   const hazardError = ref('')
   const selectedHazardId = ref<HazardId | null>(null)
-  const hazardsEnabled = ref(false)
+  const hiddenCategoryIds = ref<string[]>([])
   const hasLoadedHazards = ref(false)
   const hazardPlacementType = ref<HazardGeometryType | null>(null)
   const hazardDrawPoints = ref<MapDrawPoint[]>([])
   const showHazardFormModal = ref(false)
+  let cityScopedSyncTimer: ReturnType<typeof setInterval> | null = null
+  let cityScopedSyncInFlight = false
 
   // ── Computed ───────────────────────────────────────────────────────────────
   const isSidebarSubmitting = computed(() => isSavingLayer.value || isSavingMappedZone.value)
@@ -88,6 +100,12 @@ export function useAdminMap() {
       (zone) => zone.is_visible && activeLayerIds.has(zone.zoning_layer_id),
     )
   })
+
+  const hiddenCategoryIdSet = computed(() => new Set(hiddenCategoryIds.value))
+
+  const visibleHazards = computed(() =>
+    hazards.value.filter((h) => !hiddenCategoryIdSet.value.has(h.category_id)),
+  )
 
   const isHazardPlacementActive = computed(() => hazardPlacementType.value !== null)
   const activeDrawPoints = computed(() =>
@@ -107,7 +125,7 @@ export function useAdminMap() {
   async function loadZoningLayers(): Promise<void> {
     zoningError.value = ''
     try {
-      zoningLayers.value = await listMyZoningLayers()
+      zoningLayers.value = await listCityZoningLayers()
     } catch (error) {
       zoningError.value = error instanceof Error ? error.message : 'Failed to load zoning layers.'
     }
@@ -116,9 +134,67 @@ export function useAdminMap() {
   async function loadMappedZones(): Promise<void> {
     zoningError.value = ''
     try {
-      mappedZones.value = await listMyMappedZones()
+      mappedZones.value = await listCityMappedZones()
     } catch (error) {
       zoningError.value = error instanceof Error ? error.message : 'Failed to load mapped zones.'
+    }
+  }
+
+  async function refreshCityScopedMapData(): Promise<void> {
+    if (cityScopedSyncInFlight) {
+      return
+    }
+
+    cityScopedSyncInFlight = true
+    try {
+      await Promise.all([loadZoningLayers(), loadMappedZones()])
+    } finally {
+      cityScopedSyncInFlight = false
+    }
+  }
+
+  function startCityScopedSync(): void {
+    if (cityScopedSyncTimer !== null) {
+      return
+    }
+
+    cityScopedSyncTimer = setInterval(() => {
+      void refreshCityScopedMapData()
+    }, 6000)
+  }
+
+  function stopCityScopedSync(): void {
+    if (cityScopedSyncTimer !== null) {
+      clearInterval(cityScopedSyncTimer)
+      cityScopedSyncTimer = null
+    }
+  }
+
+  async function loadMapCenterFromUserMetadata(): Promise<void> {
+    try {
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase.auth.getUser()
+
+      if (error || !data.user) {
+        return
+      }
+
+      const metadata = (data.user.user_metadata ?? {}) as Record<string, unknown>
+      cityId.value = typeof metadata.city_id === 'string' ? metadata.city_id : null
+      const center = await resolveCityCenter({
+        cityId: cityId.value,
+        cityName: typeof metadata.city_name === 'string' ? metadata.city_name : null,
+        legacyCity: typeof metadata.city === 'string' ? metadata.city : null,
+      })
+
+      if (!center) {
+        return
+      }
+
+      mapCenter.value = { lat: center.lat, lng: center.lng }
+      mapRef.value?.setCenter(mapCenter.value, 14)
+    } catch {
+      // Keep default map center if city-center lookup data is unavailable.
     }
   }
 
@@ -264,6 +340,14 @@ export function useAdminMap() {
   }
 
   // ── Hazard placement ───────────────────────────────────────────────────────
+  async function loadHazardCategories(): Promise<void> {
+    try {
+      hazardCategories.value = await listHazardCategories()
+    } catch {
+      // Non-critical: form falls back to empty category list
+    }
+  }
+
   async function loadHazards(force = false): Promise<void> {
     if (hasLoadedHazards.value && !force) {
       return
@@ -286,8 +370,12 @@ export function useAdminMap() {
     }
   }
 
-  async function ensureHazardsLoaded(): Promise<void> {
-    await loadHazards(false)
+  function handleToggleCategoryVisibility(categoryId: string): void {
+    if (hiddenCategoryIdSet.value.has(categoryId)) {
+      hiddenCategoryIds.value = hiddenCategoryIds.value.filter((id) => id !== categoryId)
+    } else {
+      hiddenCategoryIds.value = [...hiddenCategoryIds.value, categoryId]
+    }
   }
 
   function startHazardPlacement(placementType: HazardGeometryType): void {
@@ -384,25 +472,18 @@ export function useAdminMap() {
     try {
       const createdHazard = await createHazard({
         ...payload,
+        city_id: cityId.value ?? '',
         geometry,
         geometry_type: hazardPlacementType.value,
       })
       hazards.value = [createdHazard, ...hazards.value]
       hasLoadedHazards.value = true
-      hazardsEnabled.value = true
       selectedHazardId.value = createdHazard.id
       cancelHazardPlacement()
     } catch (error) {
       hazardError.value = error instanceof Error ? error.message : 'Failed to create hazard.'
     } finally {
       isSavingHazard.value = false
-    }
-  }
-
-  async function handleToggleHazardsEnabled(enabled: boolean): Promise<void> {
-    hazardsEnabled.value = enabled
-    if (enabled) {
-      await ensureHazardsLoaded()
     }
   }
 
@@ -511,7 +592,14 @@ export function useAdminMap() {
     )
   }
 
+  function toggleMapPoi(): void {
+    showMapPoi.value = !showMapPoi.value
+    mapRef.value?.setPoisVisible(showMapPoi.value)
+  }
+
   async function onMapReady(): Promise<void> {
+    mapRef.value?.setCenter(mapCenter.value, 14)
+    mapRef.value?.setPoisVisible(showMapPoi.value)
     mapRef.value?.setDrawMode(isAnyDrawModeActive.value)
     mapRef.value?.setMapClickHandler(isAnyDrawModeActive.value ? handleMapClick : null)
     mapRef.value?.setDrawPointMoveHandler(isAnyDrawModeActive.value ? handleDrawPointMove : null)
@@ -521,7 +609,7 @@ export function useAdminMap() {
         (barangayBorders.value as BarangayFeatureCollection) ?? null,
       ),
       mapRef.value?.renderMappedZones(visibleMappedZones.value),
-      mapRef.value?.renderHazards(hazardsEnabled.value, hazards.value),
+      mapRef.value?.renderHazards(true, visibleHazards.value),
       mapRef.value?.renderDrawPreview(activeDrawPoints.value),
     ])
   }
@@ -558,9 +646,9 @@ export function useAdminMap() {
   }, { deep: true })
 
   watch(
-    [hazardsEnabled, hazards],
-    () => {
-      void mapRef.value?.renderHazards(hazardsEnabled.value, hazards.value)
+    visibleHazards,
+    (visible) => {
+      void mapRef.value?.renderHazards(true, visible)
     },
     { deep: true },
   )
@@ -582,9 +670,9 @@ export function useAdminMap() {
   )
 
   watch(
-    [selectedHazardId, hazards, hazardsEnabled],
+    [selectedHazardId, hazards],
     () => {
-      if (!hazardsEnabled.value || !selectedHazardId.value) return
+      if (!selectedHazardId.value) return
       const hazard = hazards.value.find((h) => h.id === selectedHazardId.value)
       if (hazard) {
         const points = getHazardFocusPoints(hazard)
@@ -604,19 +692,34 @@ export function useAdminMap() {
   })
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
+  const handleWindowFocusSync = (): void => {
+    void refreshCityScopedMapData()
+  }
+
   onMounted(async () => {
     window.addEventListener('keydown', handleDrawUndoShortcut)
-    await Promise.all([loadZoningLayers(), loadMappedZones()])
+    window.addEventListener('focus', handleWindowFocusSync)
+    startCityScopedSync()
+    await Promise.all([
+      loadMapCenterFromUserMetadata(),
+      loadZoningLayers(),
+      loadMappedZones(),
+      loadHazardCategories(),
+      loadHazards(),
+    ])
   })
 
   onBeforeUnmount(() => {
     window.removeEventListener('keydown', handleDrawUndoShortcut)
+    window.removeEventListener('focus', handleWindowFocusSync)
+    stopCityScopedSync()
   })
 
   return {
     // Map
     provider,
     mapRef,
+    mapCenter,
     onMapReady,
     // Barangay borders
     barangayBorders,
@@ -629,6 +732,9 @@ export function useAdminMap() {
     isHazardSidebarOpen,
     toggleLayerSidebar,
     toggleHazardSidebar,
+    // Map display
+    showMapPoi,
+    toggleMapPoi,
     // Zoning
     isSavingLayer,
     isSavingMappedZone,
@@ -656,19 +762,20 @@ export function useAdminMap() {
     handleDeleteMappedZone,
     handleFocusMappedZone,
     // Hazards
+    hazardCategories,
     hazards,
+    hiddenCategoryIds,
     isLoadingHazards,
     isSavingHazard,
     hazardError,
     selectedHazardId,
-    hazardsEnabled,
     hazardPlacementType,
     hazardDrawPoints,
     showHazardFormModal,
     isHazardPlacementActive,
     loadHazards,
     handleSaveHazard,
-    handleToggleHazardsEnabled,
+    handleToggleCategoryVisibility,
     handleStartCreateHazard,
     handleSelectHazard,
     handleUpdateHazard,

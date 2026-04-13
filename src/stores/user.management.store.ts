@@ -1,16 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { listUsers } from '@/services/user-management.service'
-import type { UserRow, UserStatus } from '@/views/(admin)/users/types/users-table.types'
-
-const resolveStatus = (
-  bannedUntil: string | null | undefined,
-  confirmedAt: string | null | undefined,
-): UserStatus => {
-  if (bannedUntil && new Date(bannedUntil) > new Date()) return 'Suspended'
-  if (confirmedAt) return 'Active'
-  return 'Pending'
-}
+import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
 
 export const useUserManagementStore = defineStore('userManagement', () => {
   const users = ref<UserRow[]>([])
@@ -29,13 +20,26 @@ export const useUserManagementStore = defineStore('userManagement', () => {
       return
     }
 
-    users.value = fetchedUsers.map((user) => ({
-      id: user.id,
-      fullName: user.full_name ?? user.email ?? 'Unknown',
-      email: user.email ?? '',
-      role: user.role ?? 'user',
-      status: resolveStatus(user.banned_until, user.confirmed_at),
-    }))
+    users.value = fetchedUsers.map((user) => {
+      const metadata = user.raw_user_meta_data ?? {}
+      const city =
+        user.city ??
+        user.city_name ??
+        metadata.city_name ??
+        metadata.cityName ??
+        metadata.city ??
+        ''
+      const cityId = metadata.city_id ?? undefined
+
+      return {
+        id: user.id,
+        username: user.full_name ?? user.email ?? 'Unknown',
+        email: user.email ?? '',
+        role: user.role ?? 'user',
+        city,
+        cityId,
+      }
+    })
 
     isLoading.value = false
   }

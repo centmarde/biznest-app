@@ -75,7 +75,7 @@ const handleLogout = async (): Promise<void> => {
 </script>
 
 <template>
-  <nav class="sticky top-0 z-50 border-b bg-card/70 backdrop-blur">
+  <nav class="sticky top-0 z-[2000] border-b bg-card/70 backdrop-blur">
     <div class="mx-auto flex h-16 w-full max-w-screen-3xl items-center justify-between px-4">
       <RouterLink
         to="/"
@@ -115,7 +115,7 @@ const handleLogout = async (): Promise<void> => {
               <span class="max-w-[180px] truncate text-sm font-medium">{{ userName }}</span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" class="w-56">
+          <DropdownMenuContent align="end" class="w-56 z-[2500]">
             <DropdownMenuLabel
               v-if="userEmail"
               class="truncate text-xs font-normal text-muted-foreground"

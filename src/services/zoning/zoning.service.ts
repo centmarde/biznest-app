@@ -13,6 +13,26 @@ import type {
 const ZONING_LAYERS_TABLE = 'zoning_layers'
 const MAPPED_ZONES_TABLE = 'mapped_zones'
 
+async function getCurrentCityId(): Promise<string> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.auth.getUser()
+
+  if (error || !data.user) {
+    throw new Error('Unable to resolve current user city. Please sign in again.')
+  }
+
+  const metadata = (data.user.user_metadata ?? {}) as Record<string, unknown>
+  const cityId = typeof metadata.city_id === 'string'
+    ? metadata.city_id.trim()
+    : ''
+
+  if (!cityId) {
+    throw new Error('Missing city_id in account metadata. Contact an administrator.')
+  }
+
+  return cityId
+}
+
 function normalizePolygonPoints(points: MapDrawPoint[]): [number, number][] {
   const ring = points.map((point) => [point.lng, point.lat] as [number, number])
 
@@ -70,22 +90,36 @@ function toMappedZone(row: MappedZoneRpcRow): MappedZone {
   }
 }
 
-async function getAuthenticatedUserId(): Promise<string> {
-  const supabase = getSupabaseClient()
-  const { data, error } = await supabase.auth.getUser()
-
-  if (error || !data.user?.id) {
-    throw new Error('You must be logged in to manage zoning layers.')
+function toGeoJsonGeometry(value: unknown): { type?: string; coordinates?: unknown } | null {
+  if (!value) {
+    return null
   }
 
-  return data.user.id
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value) as { type?: string; coordinates?: unknown }
+      return typeof parsed === 'object' && parsed !== null ? parsed : null
+    } catch {
+      return null
+    }
+  }
+
+  if (typeof value === 'object') {
+    const typed = value as { type?: string; coordinates?: unknown }
+    return typed
+  }
+
+  return null
 }
 
-export async function listMyZoningLayers(): Promise<ZoningLayer[]> {
+export async function listCityZoningLayers(): Promise<ZoningLayer[]> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
+
   const { data, error } = await supabase
     .from(ZONING_LAYERS_TABLE)
     .select('id, title, color, description, is_active, created_at, updated_at')
+    .eq('city_id', cityId)
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -95,12 +129,12 @@ export async function listMyZoningLayers(): Promise<ZoningLayer[]> {
   return (data ?? []) as ZoningLayer[]
 }
 
+export const listMyZoningLayers = listCityZoningLayers
+
 export async function createZoningLayer(input: CreateZoningLayerInput): Promise<ZoningLayer> {
   const supabase = getSupabaseClient()
-  const userId = await getAuthenticatedUserId()
 
   const payload = {
-    user_id: userId,
     title: input.title.trim(),
     color: input.color,
     description: input.description.trim() || null,
@@ -124,6 +158,7 @@ export async function updateZoningLayer(
   input: UpdateZoningLayerInput,
 ): Promise<ZoningLayer> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
   const payload = {
     title: input.title.trim(),
     color: input.color,
@@ -134,6 +169,7 @@ export async function updateZoningLayer(
     .from(ZONING_LAYERS_TABLE)
     .update(payload)
     .eq('id', layerId)
+    .eq('city_id', cityId)
     .select('id, title, color, description, is_active, created_at, updated_at')
     .single()
 
@@ -146,10 +182,12 @@ export async function updateZoningLayer(
 
 export async function deleteZoningLayer(layerId: string): Promise<void> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
   const { error } = await supabase
     .from(ZONING_LAYERS_TABLE)
     .delete()
     .eq('id', layerId)
+    .eq('city_id', cityId)
 
   if (error) {
     throw new Error(error.message)
@@ -161,11 +199,13 @@ export async function setZoningLayerActive(
   isActive: boolean,
 ): Promise<ZoningLayer> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
 
   const { data, error } = await supabase
     .from(ZONING_LAYERS_TABLE)
     .update({ is_active: isActive })
     .eq('id', layerId)
+    .eq('city_id', cityId)
     .select('id, title, color, description, is_active, created_at, updated_at')
     .single()
 
@@ -176,17 +216,54 @@ export async function setZoningLayerActive(
   return data as ZoningLayer
 }
 
-export async function listMyMappedZones(): Promise<MappedZone[]> {
+export async function listCityMappedZones(): Promise<MappedZone[]> {
   const supabase = getSupabaseClient()
-  const { data, error } = await supabase.rpc('get_my_mapped_zones')
+  const cityId = await getCurrentCityId()
+
+  const { data, error } = await supabase
+    .from(MAPPED_ZONES_TABLE)
+    .select(
+      `id, zoning_layer_id, name, description, is_visible, created_at, updated_at, geom, zoning_layers!inner(title, color)`,
+    )
+    .eq('city_id', cityId)
+    .order('created_at', { ascending: false })
 
   if (error) {
     throw new Error(error.message)
   }
 
-  const rows = (data ?? []) as MappedZoneRpcRow[]
+  const rows = (data ?? []).map((row) => {
+    const typed = row as {
+      id: string
+      zoning_layer_id: string
+      name: string
+      description: string | null
+      is_visible: boolean
+      created_at: string
+      updated_at: string
+      geom?: unknown
+      geometry?: unknown
+      zoning_layers?: { title?: string | null; color?: string | null } | null
+    }
+
+    return {
+      id: typed.id,
+      zoning_layer_id: typed.zoning_layer_id,
+      zoning_title: typed.zoning_layers?.title ?? 'Untitled Layer',
+      zoning_color: typed.zoning_layers?.color ?? '#64748b',
+      name: typed.name,
+      description: typed.description,
+      is_visible: typed.is_visible,
+      geometry: toGeoJsonGeometry(typed.geometry ?? typed.geom),
+      created_at: typed.created_at,
+      updated_at: typed.updated_at,
+    } satisfies MappedZoneRpcRow
+  })
+
   return rows.map(toMappedZone)
 }
+
+export const listMyMappedZones = listCityMappedZones
 
 export async function createMappedZone(input: CreateMappedZoneInput): Promise<void> {
   const supabase = getSupabaseClient()
@@ -210,6 +287,12 @@ export async function createMappedZone(input: CreateMappedZoneInput): Promise<vo
   })
 
   if (error) {
+    if (error.message.includes('Invalid zoning layer for current city')) {
+      throw new Error(
+        'Selected zoning layer does not belong to your assigned city. Reload zoning layers and pick a valid layer.',
+      )
+    }
+
     throw new Error(error.message)
   }
 }
@@ -219,6 +302,7 @@ export async function updateMappedZone(
   input: UpdateMappedZoneInput,
 ): Promise<void> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
   const payload = {
     zoning_layer_id: input.zoningLayerId,
     name: input.name.trim(),
@@ -229,6 +313,7 @@ export async function updateMappedZone(
     .from(MAPPED_ZONES_TABLE)
     .update(payload)
     .eq('id', zoneId)
+    .eq('city_id', cityId)
 
   if (error) {
     throw new Error(error.message)
@@ -237,10 +322,12 @@ export async function updateMappedZone(
 
 export async function deleteMappedZone(zoneId: string): Promise<void> {
   const supabase = getSupabaseClient()
+  const cityId = await getCurrentCityId()
   const { error } = await supabase
     .from(MAPPED_ZONES_TABLE)
     .delete()
     .eq('id', zoneId)
+    .eq('city_id', cityId)
 
   if (error) {
     throw new Error(error.message)

@@ -69,18 +69,19 @@ const getCityMetadata = (
   cityId: string
   cityName: string
 } => {
-  const cityIdFromDedicatedField = getOptionalText(meta.city_id ?? meta.cityId) ?? ''
+  const cityIdFromDedicatedField = getOptionalText(meta.city_id) ?? ''
   const cityNameFromDedicatedField = getOptionalText(meta.city_name ?? meta.cityName) ?? ''
   const cityFromLegacyField = getOptionalText(meta.city) ?? ''
+  const legacyCityLooksLikeId = cityFromLegacyField ? isLikelyCityId(cityFromLegacyField) : false
 
   if (cityIdFromDedicatedField) {
     return {
       cityId: cityIdFromDedicatedField,
-      cityName: cityNameFromDedicatedField,
+      cityName: cityNameFromDedicatedField || (legacyCityLooksLikeId ? '' : cityFromLegacyField),
     }
   }
 
-  if (cityFromLegacyField && isLikelyCityId(cityFromLegacyField)) {
+  if (legacyCityLooksLikeId) {
     return {
       cityId: cityFromLegacyField,
       cityName: cityNameFromDedicatedField,
@@ -195,10 +196,20 @@ export const fetchAllUsers = async (): Promise<UserRow[]> => {
 
 export const updateUserProfile = async (
   userId: string,
-  updates: { username?: string; role?: string; cityId?: string },
+  updates: { username?: string; role?: string; city?: string; cityId?: string },
 ): Promise<void> => {
   const supabase = getSupabaseClient()
   const metadataUpdates: Record<string, string> = {}
+  let resolvedCityName = updates.city
+
+  if (!resolvedCityName && updates.cityId) {
+    try {
+      const cityNameById = toCityNameMap(await fetchPhilippineCities())
+      resolvedCityName = cityNameById.get(updates.cityId)
+    } catch {
+      resolvedCityName = undefined
+    }
+  }
 
   if (updates.username !== undefined) {
     metadataUpdates.username = updates.username
@@ -208,8 +219,11 @@ export const updateUserProfile = async (
     metadataUpdates.role = updates.role
   }
 
+  if (resolvedCityName !== undefined) {
+    metadataUpdates.city_name = resolvedCityName
+  }
+
   if (updates.cityId !== undefined) {
-    metadataUpdates.city = updates.cityId
     metadataUpdates.city_id = updates.cityId
   }
 

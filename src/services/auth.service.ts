@@ -36,7 +36,7 @@ export const signUpWithEmail = async (payload: RegisterPayload): Promise<AuthRes
 
   if (payload.inviteToken) {
     const { data: isValidInvite, error: rpcError } = await supabase.rpc('consume_admin_invite', {
-      token_to_consume: payload.inviteToken
+      token_to_consume: payload.inviteToken,
     })
 
     if (rpcError) {
@@ -46,7 +46,7 @@ export const signUpWithEmail = async (payload: RegisterPayload): Promise<AuthRes
     if (!isValidInvite) {
       throw new Error('The invitation link is invalid or has already been used.')
     }
-    
+
     role = 'admin'
   }
 
@@ -57,7 +57,8 @@ export const signUpWithEmail = async (payload: RegisterPayload): Promise<AuthRes
       data: {
         username: payload.username.trim(),
         role: role,
-        city: '',
+        city_id: payload.city_id,
+        city_name: payload.city_name,
       },
     },
   })
