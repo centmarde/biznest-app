@@ -2,6 +2,7 @@ import { getSupabaseClient } from '@/services/supabase.client'
 import type {
   CreateHazardInput,
   Hazard,
+  HazardCategory,
   HazardGeometry,
   HazardGeometryType,
   HazardId,
@@ -11,6 +12,8 @@ import type {
 } from '@/types/hazard.types'
 
 const HAZARDS_TABLE = 'hazards'
+const HAZARD_CATEGORIES_TABLE = 'hazard_categories'
+const HAZARDS_SELECT = '*, hazard_categories(*)'
 const DEFAULT_PAGE = 1
 const DEFAULT_PAGE_SIZE = 10
 const MAX_PAGE_SIZE = 100
@@ -19,23 +22,25 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
   if (error instanceof Error && error.message) {
     return error.message
   }
-
   return fallback
 }
 
 const assertValidGeometry = (geometry: HazardGeometry): void => {
-  if(geometry.type === "LineString" &&  geometry.coordinates.length <  2){
-    throw new Error("Line hazard  need at least 2 points")
+  if (geometry.type === 'LineString' && geometry.coordinates.length < 2) {
+    throw new Error('Line hazard need at least 2 points')
   }
 
-  if(geometry.type === "Polygon" && (geometry.coordinates.length === 0 || geometry.coordinates.some(ring => normalizeRing(ring).length < 4))){
-    throw  new Error("Polygon hazard need at least 4 points")
+  if (
+    geometry.type === 'Polygon' &&
+    (geometry.coordinates.length === 0 ||
+      geometry.coordinates.some((ring) => normalizeRing(ring).length < 4))
+  ) {
+    throw new Error('Polygon hazard need at least 4 points')
   }
-
 }
 
 const toGeometryType = (geometry: HazardGeometry): HazardGeometryType => {
-      return geometry.type.toLowerCase() as HazardGeometryType
+  return geometry.type.toLowerCase() as HazardGeometryType
 }
 
 const formatPoint = (point: [number, number]): string => {
@@ -64,6 +69,7 @@ const normalizeRing = (ring: [number, number][]): [number, number][] => {
 
 const toPostgisGeometry = (geometry: HazardGeometry): string => {
   assertValidGeometry(geometry)
+
   if (geometry.type === 'Point') {
     return `SRID=4326;POINT(${formatPoint(geometry.coordinates)})`
   }
@@ -81,7 +87,11 @@ const toPostgisGeometry = (geometry: HazardGeometry): string => {
   return `SRID=4326;POLYGON(${rings})`
 }
 
-type HazardRow = Omit<Hazard, 'geometry'> & { geometry: unknown }
+// Row shape returned by Supabase when joining hazard_categories
+type HazardRow = Omit<Hazard, 'geometry' | 'category'> & {
+  geometry: unknown
+  hazard_categories: HazardCategory | null
+}
 
 const GEOMETRY_TYPES = ['Point', 'LineString', 'Polygon'] as const
 type RawGeometryType = (typeof GEOMETRY_TYPES)[number]
@@ -90,7 +100,6 @@ const isGeometryType = (value: unknown): value is RawGeometryType =>
   GEOMETRY_TYPES.includes(value as RawGeometryType)
 
 const parseGeometry = (raw: unknown): HazardGeometry => {
-  // Supabase may return PostGIS geometry as a native object or as a JSON string.
   const candidate: unknown = typeof raw === 'string' ? JSON.parse(raw) : raw
 
   if (
@@ -109,9 +118,11 @@ const parseGeometry = (raw: unknown): HazardGeometry => {
 }
 
 const toHazard = (value: HazardRow): Hazard => {
+  const { hazard_categories, ...rest } = value
   return {
-    ...value,
+    ...rest,
     geometry: parseGeometry(value.geometry),
+    ...(hazard_categories ? { category: hazard_categories } : {}),
   }
 }
 
@@ -123,7 +134,6 @@ const normalizePage = (page?: number): number => {
   if (!page || page < 1) {
     return DEFAULT_PAGE
   }
-
   return Math.floor(page)
 }
 
@@ -131,7 +141,6 @@ const normalizePageSize = (pageSize?: number): number => {
   if (!pageSize || pageSize < 1) {
     return DEFAULT_PAGE_SIZE
   }
-
   return Math.min(Math.floor(pageSize), MAX_PAGE_SIZE)
 }
 
@@ -139,6 +148,25 @@ type HazardWritePayload = Record<string, unknown> & {
   geometry?: string | HazardGeometry
   geometry_type?: string
 }
+
+// ── Category functions ──────────────────────────────────────────────────────
+
+export const listHazardCategories = async (): Promise<HazardCategory[]> => {
+  const supabase = getSupabaseClient()
+
+  const { data, error } = await supabase
+    .from(HAZARD_CATEGORIES_TABLE)
+    .select('*')
+    .order('sort_order', { ascending: true })
+
+  if (error) {
+    throw new Error(getErrorMessage(error, 'Unable to load hazard categories. Please try again.'))
+  }
+
+  return data ?? []
+}
+
+// ── Hazard functions ────────────────────────────────────────────────────────
 
 export const listHazards = async (query: HazardListQuery = {}): Promise<HazardListResponse> => {
   const supabase = getSupabaseClient()
@@ -148,7 +176,7 @@ export const listHazards = async (query: HazardListQuery = {}): Promise<HazardLi
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
 
-  let request = supabase.from(HAZARDS_TABLE).select('*', { count: 'exact' })
+  let request = supabase.from(HAZARDS_TABLE).select(HAZARDS_SELECT, { count: 'exact' })
 
   const term = escapeLikeValue(query.search ?? '')
   if (term) {
@@ -172,8 +200,12 @@ export const listHazards = async (query: HazardListQuery = {}): Promise<HazardLi
     request = request.eq('severity', filters.severity)
   }
 
-  if (filters?.category) {
-    request = request.eq('category', filters.category)
+  if (filters?.category_id) {
+    request = request.eq('category_id', filters.category_id)
+  }
+
+  if (filters?.city_id) {
+    request = request.eq('city_id', filters.city_id)
   }
 
   if (filters?.barangay) {
@@ -224,7 +256,7 @@ export const listHazards = async (query: HazardListQuery = {}): Promise<HazardLi
   }
 
   return {
-    data: (data ?? []).map(toHazard),
+    data: (data ?? []).map((row) => toHazard(row as unknown as HazardRow)),
     total: count ?? 0,
   }
 }
@@ -232,17 +264,23 @@ export const listHazards = async (query: HazardListQuery = {}): Promise<HazardLi
 export const getHazardById = async (id: HazardId): Promise<Hazard | null> => {
   const supabase = getSupabaseClient()
 
-  const { data, error } = await supabase.from(HAZARDS_TABLE).select('*').eq('id', id).maybeSingle()
+  const { data, error } = await supabase
+    .from(HAZARDS_TABLE)
+    .select(HAZARDS_SELECT)
+    .eq('id', id)
+    .maybeSingle()
 
   if (error) {
-    throw new Error(getErrorMessage(error, 'Unable to load this hazard right now. Please try again.'))
+    throw new Error(
+      getErrorMessage(error, 'Unable to load this hazard right now. Please try again.'),
+    )
   }
 
   if (!data) {
     return null
   }
 
-  return toHazard(data)
+  return toHazard(data as unknown as HazardRow)
 }
 
 export const createHazard = async (input: CreateHazardInput): Promise<Hazard> => {
@@ -254,33 +292,38 @@ export const createHazard = async (input: CreateHazardInput): Promise<Hazard> =>
     geometry_type: input.geometry_type ?? toGeometryType(input.geometry),
   }
 
-  const { data, error } = await supabase.from(HAZARDS_TABLE).insert(payload).select('*').single()
+  const { data, error } = await supabase
+    .from(HAZARDS_TABLE)
+    .insert(payload)
+    .select(HAZARDS_SELECT)
+    .single()
 
   if (error) {
     throw new Error(getErrorMessage(error, 'Unable to create hazard right now. Please try again.'))
   }
 
-  return toHazard(data)
+  return toHazard(data as unknown as HazardRow)
 }
 
 export const updateHazard = async (id: HazardId, input: UpdateHazardInput): Promise<Hazard> => {
   const supabase = getSupabaseClient()
 
-  const payload: HazardWritePayload = {
-    ...input,
-  }
+  const payload: HazardWritePayload = { ...input }
 
   const geometry = payload.geometry
 
   if (payload.geometry_type) {
-    payload.geometry_type = payload.geometry_type.toLowerCase() as HazardGeometryType
+    payload.geometry_type = (payload.geometry_type as string).toLowerCase() as HazardGeometryType
   } else if (geometry && typeof geometry !== 'string') {
-    payload.geometry_type = toGeometryType(geometry)
+    payload.geometry_type = toGeometryType(geometry as HazardGeometry)
   }
 
   if (geometry && typeof geometry !== 'string') {
-    payload.geometry = toPostgisGeometry(geometry)
+    payload.geometry = toPostgisGeometry(geometry as HazardGeometry)
   }
+
+  // Strip joined relation — never write it back to the DB
+  delete payload.category
 
   if (Object.keys(payload).length === 0) {
     const existing = await getHazardById(id)
@@ -296,7 +339,7 @@ export const updateHazard = async (id: HazardId, input: UpdateHazardInput): Prom
     .from(HAZARDS_TABLE)
     .update(payload)
     .eq('id', id)
-    .select('*')
+    .select(HAZARDS_SELECT)
     .maybeSingle()
 
   if (error) {
@@ -307,7 +350,7 @@ export const updateHazard = async (id: HazardId, input: UpdateHazardInput): Prom
     throw new Error('Hazard not found.')
   }
 
-  return toHazard(data)
+  return toHazard(data as unknown as HazardRow)
 }
 
 export const deleteHazard = async (id: HazardId): Promise<void> => {
@@ -319,4 +362,3 @@ export const deleteHazard = async (id: HazardId): Promise<void> => {
     throw new Error(getErrorMessage(error, 'Unable to delete hazard right now. Please try again.'))
   }
 }
-

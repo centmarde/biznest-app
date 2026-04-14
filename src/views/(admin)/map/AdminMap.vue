@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
-import { Globe, Layers, TriangleAlert } from 'lucide-vue-next'
+import { Globe, Layers, MapPin, MapPinOff, TriangleAlert } from 'lucide-vue-next'
 
 const {
   // Map
@@ -27,6 +27,9 @@ const {
   isHazardSidebarOpen,
   toggleLayerSidebar,
   toggleHazardSidebar,
+  // Map display
+  showMapPoi,
+  toggleMapPoi,
   // Zoning
   isSavingMappedZone,
   isSidebarSubmitting,
@@ -50,19 +53,20 @@ const {
   handleDeleteMappedZone,
   handleFocusMappedZone,
   // Hazards
+  hazardCategories,
   hazards,
+  hiddenCategoryIds,
   isLoadingHazards,
   isSavingHazard,
   hazardError,
   selectedHazardId,
-  hazardsEnabled,
   hazardPlacementType,
   hazardDrawPoints,
   showHazardFormModal,
   isHazardPlacementActive,
   loadHazards,
   handleSaveHazard,
-  handleToggleHazardsEnabled,
+  handleToggleCategoryVisibility,
   handleStartCreateHazard,
   handleSelectHazard,
   handleUpdateHazard,
@@ -189,6 +193,7 @@ const {
       <HazardFormModal
         :open="showHazardFormModal"
         mode="add"
+        :categories="hazardCategories"
         :is-submitting="isSavingHazard"
         :placement-type="hazardPlacementType"
         :point-count="hazardDrawPoints.length"
@@ -212,14 +217,15 @@ const {
     >
       <AdminMapHazardSidebar
         :hazards="hazards"
-        :is-enabled="hazardsEnabled"
+        :categories="hazardCategories"
+        :hidden-category-ids="hiddenCategoryIds"
         :is-loading="isLoadingHazards"
         :is-submitting="isSavingHazard"
         :error-message="hazardError"
         :selected-hazard-id="selectedHazardId"
         @close="isHazardSidebarOpen = false"
         @refresh="loadHazards(true)"
-        @toggle-enabled="handleToggleHazardsEnabled"
+        @toggle-category="handleToggleCategoryVisibility"
         @select-hazard="handleSelectHazard"
         @start-create-hazard="handleStartCreateHazard"
         @update-hazard="handleUpdateHazard"
@@ -304,6 +310,25 @@ const {
           </TooltipContent>
         </Tooltip>
 
+        <div class="h-px bg-border" />
+
+        <!-- Map POI -->
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <button
+              type="button"
+              class="flex h-11 w-full items-center justify-center transition-colors hover:bg-muted"
+              :class="showMapPoi ? 'bg-muted text-foreground' : 'text-muted-foreground'"
+              @click="toggleMapPoi"
+            >
+              <MapPin v-if="showMapPoi" class="h-4 w-4" />
+              <MapPinOff v-else class="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            {{ showMapPoi ? 'Hide Map POI' : 'Show Map POI' }}
+          </TooltipContent>
+        </Tooltip>
 
       </TooltipProvider>
     </div>
