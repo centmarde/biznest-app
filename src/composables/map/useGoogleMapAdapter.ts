@@ -52,6 +52,11 @@ const GOOGLE_DARK_STYLES: GoogleMapStyleRule[] = [
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f3b5f' }] },
 ]
 
+const GOOGLE_HIDE_POI_STYLES: GoogleMapStyleRule[] = [
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+]
+
 const DRAW_MODE_CURSOR =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 20l4-1 9.5-9.5-3-3L5 16z' fill='%231f2937'/%3E%3Cpath d='M14.5 6.5l3 3 1-1a1.6 1.6 0 000-2.2l-.8-.8a1.6 1.6 0 00-2.2 0z' fill='%230f172a'/%3E%3C/svg%3E\") 2 20, crosshair"
 
@@ -72,15 +77,16 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
   let isDrawMode = false
   let currentTheme: MapThemeMode = 'light'
+  let showPoi = false
 
   function applyGoogleTheme(): void {
     if (!googleMap || !googleMap.setOptions) {
       return
     }
 
-    googleMap.setOptions({
-      styles: currentTheme === 'dark' ? GOOGLE_DARK_STYLES : [],
-    })
+    const baseStyles = currentTheme === 'dark' ? GOOGLE_DARK_STYLES : []
+    const poiStyles = showPoi ? [] : GOOGLE_HIDE_POI_STYLES
+    googleMap.setOptions({ styles: [...baseStyles, ...poiStyles] })
   }
 
   function applyGoogleCursor(): void {
@@ -437,6 +443,11 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     applyGoogleTheme()
   }
 
+  function setPoisVisible(visible: boolean): void {
+    showPoi = visible
+    applyGoogleTheme()
+  }
+
   async function focusOnZone(points: MapDrawPoint[]): Promise<void> {
     if (!googleMap || points.length === 0) {
       return
@@ -526,6 +537,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     setMapClickHandler,
     setDrawMode,
     setTheme,
+    setPoisVisible,
     setDrawPointMoveHandler,
     focusOnZone,
   }

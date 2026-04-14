@@ -30,13 +30,29 @@ export type HazardGeometry =
   | HazardLineStringGeometry
   | HazardPolygonGeometry
 
+export interface HazardCategory {
+  id: Uuid
+  name: string
+  label: string
+  description: string | null
+  color: string
+  icon: string | null
+  is_visible: boolean
+  sort_order: number
+  is_active: boolean
+  created_at: IsoDateTimeString
+  updated_at: IsoDateTimeString
+}
+
 export interface Hazard {
   id: HazardId
   name: string
   description: string | null
-  category: string
+  category_id: Uuid
+  category?: HazardCategory
   severity: HazardSeverity
   status: HazardStatus
+  city_id: string
   geometry: HazardGeometry
   geometry_type: HazardGeometryType
   location_name: string | null
@@ -58,9 +74,10 @@ export interface Hazard {
 
 export interface CreateHazardInput {
   name: string
-  category: string
+  category_id: Uuid
   geometry: HazardGeometry
   geometry_type: HazardGeometryType
+  city_id: string
   description?: string | null
   severity?: HazardSeverity
   status?: HazardStatus
@@ -76,7 +93,7 @@ export interface CreateHazardInput {
   attachments?: string[]
 }
 
-export type CreateHazardFormInput = Omit<CreateHazardInput, 'geometry' | 'geometry_type'>
+export type CreateHazardFormInput = Omit<CreateHazardInput, 'geometry' | 'geometry_type' | 'city_id'>
 
 export type UpdateHazardInput = Partial<
   Omit<Hazard, 'id' | 'created_at' | 'updated_at' | 'reported_by' | 'verified_by' | 'verified_at'>
@@ -85,9 +102,10 @@ export type UpdateHazardInput = Partial<
 export interface HazardFilters {
   status?: HazardStatus
   severity?: HazardSeverity
-  category?: string
+  category_id?: Uuid
   barangay?: string
   city?: string
+  city_id?: string
   province?: string
   region?: string
   reported_by?: Uuid
@@ -104,7 +122,6 @@ export type HazardSortField =
   | 'expires_at'
   | 'severity'
   | 'status'
-  | 'category'
 
 export type SortOrder = 'asc' | 'desc'
 

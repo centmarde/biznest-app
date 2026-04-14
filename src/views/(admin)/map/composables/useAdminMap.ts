@@ -3,6 +3,7 @@ import { useBarangayBorders } from '@/composables/map/useBarangayBorders.ts'
 import {
   createHazard,
   deleteHazard,
+  listHazardCategories,
   listHazards,
   updateHazard,
 } from '@/services/hazard/hazard.service.ts'
@@ -22,6 +23,7 @@ import { getSupabaseClient } from '@/services/supabase.client.ts'
 import type {
   CreateHazardFormInput,
   Hazard,
+  HazardCategory,
   HazardGeometry,
   HazardGeometryType,
   HazardId,
@@ -53,6 +55,9 @@ export function useAdminMap() {
   const isSidebarOpen = ref(false)
   const isHazardSidebarOpen = ref(false)
 
+  // ── Map display state ──────────────────────────────────────────────────────
+  const showMapPoi = ref(false)
+
   // ── Zoning state ───────────────────────────────────────────────────────────
   const isSavingLayer = ref(false)
   const isSavingMappedZone = ref(false)
@@ -67,12 +72,14 @@ export function useAdminMap() {
   const selectedMappedZoneId = ref<string | null>(null)
 
   // ── Hazard state ───────────────────────────────────────────────────────────
+  const cityId = ref<string | null>(null)
+  const hazardCategories = ref<HazardCategory[]>([])
   const hazards = ref<Hazard[]>([])
   const isLoadingHazards = ref(false)
   const isSavingHazard = ref(false)
   const hazardError = ref('')
   const selectedHazardId = ref<HazardId | null>(null)
-  const hazardsEnabled = ref(false)
+  const hiddenCategoryIds = ref<string[]>([])
   const hasLoadedHazards = ref(false)
   const hazardPlacementType = ref<HazardGeometryType | null>(null)
   const hazardDrawPoints = ref<MapDrawPoint[]>([])
@@ -93,6 +100,12 @@ export function useAdminMap() {
       (zone) => zone.is_visible && activeLayerIds.has(zone.zoning_layer_id),
     )
   })
+
+  const hiddenCategoryIdSet = computed(() => new Set(hiddenCategoryIds.value))
+
+  const visibleHazards = computed(() =>
+    hazards.value.filter((h) => !hiddenCategoryIdSet.value.has(h.category_id)),
+  )
 
   const isHazardPlacementActive = computed(() => hazardPlacementType.value !== null)
   const activeDrawPoints = computed(() =>
@@ -167,8 +180,9 @@ export function useAdminMap() {
       }
 
       const metadata = (data.user.user_metadata ?? {}) as Record<string, unknown>
+      cityId.value = typeof metadata.city_id === 'string' ? metadata.city_id : null
       const center = await resolveCityCenter({
-        cityId: typeof metadata.city_id === 'string' ? metadata.city_id : null,
+        cityId: cityId.value,
         cityName: typeof metadata.city_name === 'string' ? metadata.city_name : null,
         legacyCity: typeof metadata.city === 'string' ? metadata.city : null,
       })
@@ -326,6 +340,14 @@ export function useAdminMap() {
   }
 
   // ── Hazard placement ───────────────────────────────────────────────────────
+  async function loadHazardCategories(): Promise<void> {
+    try {
+      hazardCategories.value = await listHazardCategories()
+    } catch {
+      // Non-critical: form falls back to empty category list
+    }
+  }
+
   async function loadHazards(force = false): Promise<void> {
     if (hasLoadedHazards.value && !force) {
       return
@@ -348,8 +370,12 @@ export function useAdminMap() {
     }
   }
 
-  async function ensureHazardsLoaded(): Promise<void> {
-    await loadHazards(false)
+  function handleToggleCategoryVisibility(categoryId: string): void {
+    if (hiddenCategoryIdSet.value.has(categoryId)) {
+      hiddenCategoryIds.value = hiddenCategoryIds.value.filter((id) => id !== categoryId)
+    } else {
+      hiddenCategoryIds.value = [...hiddenCategoryIds.value, categoryId]
+    }
   }
 
   function startHazardPlacement(placementType: HazardGeometryType): void {
@@ -446,25 +472,18 @@ export function useAdminMap() {
     try {
       const createdHazard = await createHazard({
         ...payload,
+        city_id: cityId.value ?? '',
         geometry,
         geometry_type: hazardPlacementType.value,
       })
       hazards.value = [createdHazard, ...hazards.value]
       hasLoadedHazards.value = true
-      hazardsEnabled.value = true
       selectedHazardId.value = createdHazard.id
       cancelHazardPlacement()
     } catch (error) {
       hazardError.value = error instanceof Error ? error.message : 'Failed to create hazard.'
     } finally {
       isSavingHazard.value = false
-    }
-  }
-
-  async function handleToggleHazardsEnabled(enabled: boolean): Promise<void> {
-    hazardsEnabled.value = enabled
-    if (enabled) {
-      await ensureHazardsLoaded()
     }
   }
 
@@ -573,8 +592,14 @@ export function useAdminMap() {
     )
   }
 
+  function toggleMapPoi(): void {
+    showMapPoi.value = !showMapPoi.value
+    mapRef.value?.setPoisVisible(showMapPoi.value)
+  }
+
   async function onMapReady(): Promise<void> {
     mapRef.value?.setCenter(mapCenter.value, 14)
+    mapRef.value?.setPoisVisible(showMapPoi.value)
     mapRef.value?.setDrawMode(isAnyDrawModeActive.value)
     mapRef.value?.setMapClickHandler(isAnyDrawModeActive.value ? handleMapClick : null)
     mapRef.value?.setDrawPointMoveHandler(isAnyDrawModeActive.value ? handleDrawPointMove : null)
@@ -584,7 +609,7 @@ export function useAdminMap() {
         (barangayBorders.value as BarangayFeatureCollection) ?? null,
       ),
       mapRef.value?.renderMappedZones(visibleMappedZones.value),
-      mapRef.value?.renderHazards(hazardsEnabled.value, hazards.value),
+      mapRef.value?.renderHazards(true, visibleHazards.value),
       mapRef.value?.renderDrawPreview(activeDrawPoints.value),
     ])
   }
@@ -621,9 +646,9 @@ export function useAdminMap() {
   }, { deep: true })
 
   watch(
-    [hazardsEnabled, hazards],
-    () => {
-      void mapRef.value?.renderHazards(hazardsEnabled.value, hazards.value)
+    visibleHazards,
+    (visible) => {
+      void mapRef.value?.renderHazards(true, visible)
     },
     { deep: true },
   )
@@ -645,9 +670,9 @@ export function useAdminMap() {
   )
 
   watch(
-    [selectedHazardId, hazards, hazardsEnabled],
+    [selectedHazardId, hazards],
     () => {
-      if (!hazardsEnabled.value || !selectedHazardId.value) return
+      if (!selectedHazardId.value) return
       const hazard = hazards.value.find((h) => h.id === selectedHazardId.value)
       if (hazard) {
         const points = getHazardFocusPoints(hazard)
@@ -675,7 +700,13 @@ export function useAdminMap() {
     window.addEventListener('keydown', handleDrawUndoShortcut)
     window.addEventListener('focus', handleWindowFocusSync)
     startCityScopedSync()
-    await Promise.all([loadMapCenterFromUserMetadata(), loadZoningLayers(), loadMappedZones()])
+    await Promise.all([
+      loadMapCenterFromUserMetadata(),
+      loadZoningLayers(),
+      loadMappedZones(),
+      loadHazardCategories(),
+      loadHazards(),
+    ])
   })
 
   onBeforeUnmount(() => {
@@ -701,6 +732,9 @@ export function useAdminMap() {
     isHazardSidebarOpen,
     toggleLayerSidebar,
     toggleHazardSidebar,
+    // Map display
+    showMapPoi,
+    toggleMapPoi,
     // Zoning
     isSavingLayer,
     isSavingMappedZone,
@@ -728,19 +762,20 @@ export function useAdminMap() {
     handleDeleteMappedZone,
     handleFocusMappedZone,
     // Hazards
+    hazardCategories,
     hazards,
+    hiddenCategoryIds,
     isLoadingHazards,
     isSavingHazard,
     hazardError,
     selectedHazardId,
-    hazardsEnabled,
     hazardPlacementType,
     hazardDrawPoints,
     showHazardFormModal,
     isHazardPlacementActive,
     loadHazards,
     handleSaveHazard,
-    handleToggleHazardsEnabled,
+    handleToggleCategoryVisibility,
     handleStartCreateHazard,
     handleSelectHazard,
     handleUpdateHazard,

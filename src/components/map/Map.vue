@@ -242,6 +242,14 @@ function setCenter(center: { lat: number; lng: number }, zoom = 14): void {
   googleMapAdapter.setCenter(center, zoom)
 }
 
+function setPoisVisible(visible: boolean): void {
+  if (props.provider === 'leaflet') {
+    leafletMapAdapter.setPoisVisible(visible)
+    return
+  }
+  googleMapAdapter.setPoisVisible(visible)
+}
+
 defineExpose({
   renderBarangayBorders,
   renderMappedZones,
@@ -252,6 +260,7 @@ defineExpose({
   setMapClickHandler,
   setDrawPointMoveHandler,
   setCenter,
+  setPoisVisible,
 })
 </script>
 
