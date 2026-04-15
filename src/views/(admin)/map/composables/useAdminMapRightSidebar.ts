@@ -25,7 +25,7 @@ interface SidebarEmit {
 
 export function useAdminMapRightSidebar(props: SidebarProps, emit: SidebarEmit) {
   const showAddLayerModal = ref(false)
-  const showLayerList = ref(false)
+  const showLayerList = ref(true)
   const showEditLayerModal = ref(false)
   const deletingLayerId = ref<string | null>(null)
   const editingLayerId = ref<string | null>(null)
