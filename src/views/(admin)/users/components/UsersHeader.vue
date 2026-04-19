@@ -46,7 +46,7 @@ const setRoleFilter = (value: UserRoleFilter): void => {
     >
 
     <div class="flex flex-col gap-3 mt-2 xl:flex-row xl:items-center">
-      <div class="relative w-full xl:max-w-md">
+      <div class="relative w-full xl:max-w-md bg-card/80 rounded-md">
         <Search class="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input class="pl-9" placeholder="Search by ID, name, or email" v-model="searchQueryModel" />
       </div>
@@ -55,7 +55,7 @@ const setRoleFilter = (value: UserRoleFilter): void => {
         <DropdownMenuTrigger as-child>
           <Button
             variant="outline"
-            class="w-full justify-between xl:w-56"
+            class="w-full justify-between xl:w-56 bg-card/80"
             aria-label="Filter users by role"
           >
             {{ roleFilterModel === 'all' ? 'All roles' : roleFilterModel }}
@@ -76,15 +76,15 @@ const setRoleFilter = (value: UserRoleFilter): void => {
     </div>
 
     <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-      <div class="rounded-md border bg-muted/20 px-3 py-2">
+      <div class="rounded-md border bg-card/80 px-3 py-2">
         <TypographySmall as="p" class="text-muted-foreground uppercase">Users</TypographySmall>
         <p class="text-lg font-semibold">{{ props.totalUsersCount }}</p>
       </div>
-      <div class="rounded-md border bg-muted/20 px-3 py-2">
+      <div class="rounded-md border bg-card/80 px-3 py-2">
         <TypographySmall as="p" class="text-muted-foreground uppercase">Admin</TypographySmall>
         <p class="text-lg font-semibold">{{ props.adminCount }}</p>
       </div>
-      <div class="rounded-md border bg-muted/20 px-3 py-2">
+      <div class="rounded-md border bg-card/80 px-3 py-2">
         <TypographySmall as="p" class="text-muted-foreground uppercase">Superadmin</TypographySmall>
         <p class="text-lg font-semibold">{{ props.superadminCount }}</p>
       </div>
