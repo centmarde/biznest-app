@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, type HTMLAttributes } from 'vue'
+import { computed, onMounted, ref, watch, type HTMLAttributes } from 'vue'
 import { useRouter } from 'vue-router'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+  Combobox,
+  ComboboxAnchor,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxItemIndicator,
+  ComboboxList,
+} from '@/components/ui/combobox'
 import {
   Field,
   FieldDescription,
@@ -18,13 +21,22 @@ import {
   FieldLabel,
   FieldSeparator,
 } from '@/components/ui/field'
+import logoImage from '@/assets/images/logo.png'
 import { Input } from '@/components/ui/input'
+
+import {
+  confirmedValidator,
+  emailValidator,
+  passwordValidator,
+  requiredValidator,
+} from '@/utils/validators'
+
+//separate UI components and logic for better readability and maintainability
 import { useAlertContext } from '@/composables/useAlert'
 import { signUpWithEmail } from '@/services/auth.service'
 import { fetchPhilippineCities } from '@/services/cities.service'
 import type { CityOption } from '@/services/cities.service'
-import logoImage from '@/assets/images/logo.png'
-import { Loader2 } from 'lucide-vue-next'
+import { Check, Loader2 } from 'lucide-vue-next'
 
 const props = defineProps<{
   class?: HTMLAttributes['class']
@@ -44,6 +56,22 @@ const isFetchingCities = ref(false)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 
+const touched = ref({
+  email: false,
+  username: false,
+  city: false,
+  password: false,
+  confirmPassword: false,
+})
+
+const fieldErrors = ref({
+  email: null as string | null,
+  username: null as string | null,
+  city: null as string | null,
+  password: null as string | null,
+  confirmPassword: null as string | null,
+})
+
 const selectedCityName = computed(() => {
   if (!cityId.value) {
     return ''
@@ -51,6 +79,11 @@ const selectedCityName = computed(() => {
 
   return cities.value.find((city) => city.id === cityId.value)?.name ?? ''
 })
+
+const getCityDisplayValue = (val: unknown): string => {
+  if (typeof val !== 'string' || !val) return ''
+  return cities.value.find((city) => city.id === val)?.name ?? ''
+}
 
 const fetchCities = async (): Promise<void> => {
   if (cities.value.length > 0) {
@@ -72,27 +105,114 @@ onMounted(() => {
   void fetchCities()
 })
 
+const getValidatorMessage = (result: boolean | string): string | null => {
+  if (result === true) return null
+  return typeof result === 'string' ? result : 'Invalid value'
+}
+
+const validateField = (...results: Array<boolean | string>): string | null => {
+  for (const result of results) {
+    const message = getValidatorMessage(result)
+    if (message) return message
+  }
+
+  return null
+}
+
+const updateEmailError = (): void => {
+  fieldErrors.value.email = touched.value.email
+    ? validateField(requiredValidator(email.value), emailValidator(email.value))
+    : null
+}
+
+const updateUsernameError = (): void => {
+  fieldErrors.value.username = touched.value.username
+    ? validateField(requiredValidator(username.value))
+    : null
+}
+
+const updateCityError = (): void => {
+  fieldErrors.value.city = touched.value.city ? validateField(requiredValidator(cityId.value)) : null
+}
+
+const updatePasswordError = (): void => {
+  fieldErrors.value.password = touched.value.password
+    ? validateField(requiredValidator(password.value), passwordValidator(password.value))
+    : null
+}
+
+const updateConfirmPasswordError = (): void => {
+  fieldErrors.value.confirmPassword = touched.value.confirmPassword
+    ? validateField(
+        requiredValidator(confirmPassword.value),
+        confirmedValidator(confirmPassword.value, password.value),
+      )
+    : null
+}
+
+const updateAllFieldErrors = (): void => {
+  updateEmailError()
+  updateUsernameError()
+  updateCityError()
+  updatePasswordError()
+  updateConfirmPasswordError()
+}
+
+const getFirstFieldError = (): string | null => {
+  return (
+    fieldErrors.value.email ||
+    fieldErrors.value.username ||
+    fieldErrors.value.city ||
+    fieldErrors.value.password ||
+    fieldErrors.value.confirmPassword ||
+    null
+  )
+}
+
+watch(email, () => {
+  if (!touched.value.email) touched.value.email = true
+  if (isSubmitting.value) return
+  updateEmailError()
+})
+
+watch(username, () => {
+  if (!touched.value.username) touched.value.username = true
+  if (isSubmitting.value) return
+  updateUsernameError()
+})
+
+watch(cityId, () => {
+  if (!touched.value.city) touched.value.city = true
+  if (isSubmitting.value) return
+  updateCityError()
+})
+
+watch(password, () => {
+  if (!touched.value.password) touched.value.password = true
+  if (isSubmitting.value) return
+  updatePasswordError()
+  updateConfirmPasswordError()
+})
+
+watch(confirmPassword, () => {
+  if (!touched.value.confirmPassword) touched.value.confirmPassword = true
+  if (isSubmitting.value) return
+  updateConfirmPasswordError()
+})
+
 const handleSubmit = async (): Promise<void> => {
   errorMessage.value = ''
 
-  if (
-    !email.value ||
-    !username.value ||
-    !cityId.value ||
-    !password.value ||
-    !confirmPassword.value
-  ) {
-    errorMessage.value = 'Please fill in every field.'
-    return
-  }
+  touched.value.email = true
+  touched.value.username = true
+  touched.value.city = true
+  touched.value.password = true
+  touched.value.confirmPassword = true
+  updateAllFieldErrors()
 
-  if (password.value.length < 8) {
-    errorMessage.value = 'Password must be at least 8 characters long.'
-    return
-  }
-
-  if (password.value !== confirmPassword.value) {
-    errorMessage.value = 'Passwords do not match.'
+  const firstError = getFirstFieldError()
+  if (firstError) {
+    errorMessage.value = firstError
     return
   }
 
@@ -156,11 +276,13 @@ const handleSubmit = async (): Promise<void> => {
                 type="email"
                 placeholder="m@example.com"
                 autocomplete="email"
+                :disabled="isSubmitting"
                 required
               />
               <FieldDescription>
                 We'll use this to contact you. We will not share your email with anyone else.
               </FieldDescription>
+              <FieldError v-if="fieldErrors.email">{{ fieldErrors.email }}</FieldError>
             </Field>
             <Field>
               <FieldLabel for="username"> Username </FieldLabel>
@@ -170,39 +292,56 @@ const handleSubmit = async (): Promise<void> => {
                 type="text"
                 placeholder="yourname"
                 autocomplete="username"
+                :disabled="isSubmitting"
                 required
               />
+              <FieldError v-if="fieldErrors.username">{{ fieldErrors.username }}</FieldError>
             </Field>
             <Field>
               <FieldLabel for="city"> City </FieldLabel>
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button
+              <Combobox
+                v-model="cityId"
+                open-on-focus
+                open-on-click
+                :disabled="isFetchingCities || isSubmitting"
+              >
+                <ComboboxAnchor class="w-full">
+                  <ComboboxInput
                     id="city"
-                    variant="outline"
-                    class="w-full justify-start font-normal"
-                    :class="!cityId && 'text-muted-foreground'"
+                    class="w-full"
+                    placeholder="Select a city"
+                    :display-value="getCityDisplayValue"
                     :disabled="isFetchingCities || isSubmitting"
-                  >
-                    {{ selectedCityName || 'Select a city' }}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" class="w-[420px] max-h-[300px] overflow-y-auto">
+                  />
+                </ComboboxAnchor>
+
+                <ComboboxList
+                  align="start"
+                  class="max-h-75 w-(--reka-combobox-trigger-width) overflow-y-auto"
+                >
                   <div v-if="isFetchingCities" class="text-muted-foreground p-3 text-sm">
                     <Loader2 class="mr-2 inline-block h-4 w-4 animate-spin" />
                     Loading cities...
                   </div>
+
                   <template v-else>
-                    <DropdownMenuItem
+                    <ComboboxEmpty>No cities found.</ComboboxEmpty>
+
+                    <ComboboxItem
                       v-for="city in cities"
                       :key="city.id"
-                      @click="cityId = city.id"
+                      :value="city.id"
+                      :text-value="city.name"
                     >
-                      {{ city.name }}
-                    </DropdownMenuItem>
+                      <span>{{ city.name }}</span>
+                      <ComboboxItemIndicator>
+                        <Check class="h-4 w-4" />
+                      </ComboboxItemIndicator>
+                    </ComboboxItem>
                   </template>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </ComboboxList>
+              </Combobox>
+              <FieldError v-if="fieldErrors.city">{{ fieldErrors.city }}</FieldError>
             </Field>
             <Field>
               <Field class="grid grid-cols-2 gap-4">
@@ -215,6 +354,7 @@ const handleSubmit = async (): Promise<void> => {
                       :type="showPassword ? 'text' : 'password'"
                       class="pr-10"
                       autocomplete="new-password"
+                      :disabled="isSubmitting"
                       required
                     />
                     <button
@@ -260,6 +400,7 @@ const handleSubmit = async (): Promise<void> => {
                       <span class="sr-only">{{ showPassword ? 'Hide' : 'Show' }} password</span>
                     </button>
                   </div>
+                  <FieldError v-if="fieldErrors.password">{{ fieldErrors.password }}</FieldError>
                 </Field>
                 <Field>
                   <FieldLabel for="confirm-password"> Confirm Password </FieldLabel>
@@ -270,6 +411,7 @@ const handleSubmit = async (): Promise<void> => {
                       :type="showConfirmPassword ? 'text' : 'password'"
                       class="pr-10"
                       autocomplete="new-password"
+                      :disabled="isSubmitting"
                       required
                     />
                     <button
@@ -317,6 +459,7 @@ const handleSubmit = async (): Promise<void> => {
                       >
                     </button>
                   </div>
+                  <FieldError v-if="fieldErrors.confirmPassword">{{ fieldErrors.confirmPassword }}</FieldError>
                 </Field>
               </Field>
               <FieldDescription> Must be at least 8 characters long. </FieldDescription>
