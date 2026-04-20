@@ -130,7 +130,7 @@ const mapSignUpError = (error: unknown): AuthServiceError => {
   }
 
   return new AuthServiceError(
-    rawMessage || 'Something went wrong while creating your account. Please try again.',
+    'Something went wrong while creating your account. Please try again.',
     {
       field: 'general',
       code: rawCode,
@@ -161,7 +161,7 @@ const mapSignInError = (error: unknown): AuthServiceError => {
     )
   }
 
-  return new AuthServiceError(rawMessage || 'Something went wrong. Please try again.', {
+  return new AuthServiceError('Something went wrong. Please try again.', {
     field: 'general',
     code: rawCode,
     status: rawStatus,
