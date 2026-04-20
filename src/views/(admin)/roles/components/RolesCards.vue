@@ -152,7 +152,7 @@ const savePermissions = async (): Promise<void> => {
     <Card
       v-for="role in props.roles"
       :key="role.id"
-      class="group relative flex flex-col cursor-pointer shadow-sm transition-all hover:bg-muted/10 hover:shadow-md"
+      class="group relative flex flex-col cursor-pointer shadow-sm transition-all hover:bg-card/80 hover:shadow-md"
       @click="openPermissionModal(role)"
     >
       <CardHeader class="pb-3">

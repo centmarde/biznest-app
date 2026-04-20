@@ -20,7 +20,7 @@ const props = defineProps<RolesHeaderProps>()
     </TypographyMuted>
 
     <div class="flex flex-col gap-3 mt-2 xl:flex-row xl:items-center">
-      <div class="rounded-md border bg-muted/20 px-3 py-2 w-full sm:w-1/3 xl:w-auto min-w-[150px]">
+      <div class="rounded-md border bg-card/80 px-3 py-2 w-full sm:w-1/3 xl:w-auto min-w-[150px]">
         <TypographySmall as="p" class="text-muted-foreground uppercase">Roles</TypographySmall>
         <p class="text-lg font-semibold">{{ props.totalRolesCount }}</p>
       </div>

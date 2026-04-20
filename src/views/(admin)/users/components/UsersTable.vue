@@ -135,11 +135,9 @@ const onUserUpdated = (user: UserRow) => {
 <template>
   <div class="space-y-4">
     <div class="overflow-hidden rounded-xl border bg-background">
-      <Table class="min-w-[780px] text-left text-sm">
+      <Table class="min-w-[780px] text-left text-sm bg-card/80">
         <TableHeader>
-          <TableRow
-            class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground hover:bg-muted/40"
-          >
+          <TableRow class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
             <TableHead class="px-4 py-3 font-medium">ID</TableHead>
             <TableHead class="px-4 py-3 font-medium">Name</TableHead>
             <TableHead class="px-4 py-3 font-medium">Email</TableHead>
@@ -159,7 +157,7 @@ const onUserUpdated = (user: UserRow) => {
             </TableCell>
           </TableRow>
 
-          <TableRow v-for="row in paginatedRows" v-else :key="row.id">
+          <TableRow v-for="row in paginatedRows" v-else :key="row.id" class="hover:bg-muted/20">
             <TableCell class="px-4 py-3 font-medium">{{ row.id }}</TableCell>
             <TableCell class="px-4 py-3">{{ row.username }}</TableCell>
             <TableCell class="px-4 py-3 text-muted-foreground">{{ row.email }}</TableCell>
