@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { useAlertContext } from '@/composables/useAlert'
-import { signUpWithEmail } from '@/services/auth.service'
+import { AuthServiceError, signUpWithEmail } from '@/services/auth.service'
 import { fetchPhilippineCities } from '@/services/cities.service'
 import type { CityOption } from '@/services/cities.service'
 import logoImage from '@/assets/images/logo.png'
@@ -42,7 +42,28 @@ const confirmPassword = ref('')
 const cities = ref<CityOption[]>([])
 const isFetchingCities = ref(false)
 const isSubmitting = ref(false)
-const errorMessage = ref('')
+
+type RegisterFormField = 'email' | 'username' | 'city' | 'password' | 'confirmPassword' | 'general'
+
+const formErrors = ref<Record<RegisterFormField, string>>({
+  email: '',
+  username: '',
+  city: '',
+  password: '',
+  confirmPassword: '',
+  general: '',
+})
+
+const clearFormErrors = (): void => {
+  formErrors.value = {
+    email: '',
+    username: '',
+    city: '',
+    password: '',
+    confirmPassword: '',
+    general: '',
+  }
+}
 
 const selectedCityName = computed(() => {
   if (!cityId.value) {
@@ -62,7 +83,7 @@ const fetchCities = async (): Promise<void> => {
   try {
     cities.value = await fetchPhilippineCities()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to load cities.'
+    formErrors.value.city = error instanceof Error ? error.message : 'Unable to load cities.'
   } finally {
     isFetchingCities.value = false
   }
@@ -73,26 +94,40 @@ onMounted(() => {
 })
 
 const handleSubmit = async (): Promise<void> => {
-  errorMessage.value = ''
+  clearFormErrors()
 
-  if (
-    !email.value ||
-    !username.value ||
-    !cityId.value ||
-    !password.value ||
-    !confirmPassword.value
-  ) {
-    errorMessage.value = 'Please fill in every field.'
+  if (!email.value) {
+    formErrors.value.email = 'Email is required.'
+  }
+
+  if (!username.value) {
+    formErrors.value.username = 'Username is required.'
+  }
+
+  if (!cityId.value) {
+    formErrors.value.city = 'Please select your city.'
+  }
+
+  if (!password.value) {
+    formErrors.value.password = 'Password is required.'
+  }
+
+  if (!confirmPassword.value) {
+    formErrors.value.confirmPassword = 'Please confirm your password.'
+  }
+
+  if (Object.values(formErrors.value).some((message) => message.length > 0)) {
+    formErrors.value.general = 'Please fill in all required fields.'
     return
   }
 
   if (password.value.length < 8) {
-    errorMessage.value = 'Password must be at least 8 characters long.'
+    formErrors.value.password = 'Password must be at least 8 characters long.'
     return
   }
 
   if (password.value !== confirmPassword.value) {
-    errorMessage.value = 'Passwords do not match.'
+    formErrors.value.confirmPassword = 'Passwords do not match.'
     return
   }
 
@@ -128,8 +163,26 @@ const handleSubmit = async (): Promise<void> => {
     password.value = ''
     confirmPassword.value = ''
   } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : 'Unable to create your account right now.'
+    if (error instanceof AuthServiceError) {
+      switch (error.field) {
+        case 'email':
+          formErrors.value.email = error.message
+          break
+        case 'username':
+          formErrors.value.username = error.message
+          break
+        case 'password':
+          formErrors.value.password = error.message
+          break
+        default:
+          formErrors.value.general = error.message
+          break
+      }
+    } else if (error instanceof Error) {
+      formErrors.value.general = error.message
+    } else {
+      formErrors.value.general = 'Unable to create your account right now.'
+    }
   } finally {
     isSubmitting.value = false
   }
@@ -158,6 +211,7 @@ const handleSubmit = async (): Promise<void> => {
                 autocomplete="email"
                 required
               />
+              <FieldError v-if="formErrors.email">{{ formErrors.email }}</FieldError>
               <FieldDescription>
                 We'll use this to contact you. We will not share your email with anyone else.
               </FieldDescription>
@@ -172,6 +226,7 @@ const handleSubmit = async (): Promise<void> => {
                 autocomplete="username"
                 required
               />
+              <FieldError v-if="formErrors.username">{{ formErrors.username }}</FieldError>
             </Field>
             <Field>
               <FieldLabel for="city"> City </FieldLabel>
@@ -203,6 +258,7 @@ const handleSubmit = async (): Promise<void> => {
                   </template>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <FieldError v-if="formErrors.city">{{ formErrors.city }}</FieldError>
             </Field>
             <Field>
               <Field class="grid grid-cols-2 gap-4">
@@ -260,6 +316,7 @@ const handleSubmit = async (): Promise<void> => {
                       <span class="sr-only">{{ showPassword ? 'Hide' : 'Show' }} password</span>
                     </button>
                   </div>
+                  <FieldError v-if="formErrors.password">{{ formErrors.password }}</FieldError>
                 </Field>
                 <Field>
                   <FieldLabel for="confirm-password"> Confirm Password </FieldLabel>
@@ -317,12 +374,15 @@ const handleSubmit = async (): Promise<void> => {
                       >
                     </button>
                   </div>
+                  <FieldError v-if="formErrors.confirmPassword">{{
+                    formErrors.confirmPassword
+                  }}</FieldError>
                 </Field>
               </Field>
               <FieldDescription> Must be at least 8 characters long. </FieldDescription>
             </Field>
-            <Field v-if="errorMessage">
-              <FieldError>{{ errorMessage }}</FieldError>
+            <Field v-if="formErrors.general">
+              <FieldError>{{ formErrors.general }}</FieldError>
             </Field>
             <Field>
               <Button type="submit" :disabled="isSubmitting">
