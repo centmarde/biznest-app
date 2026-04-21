@@ -113,6 +113,31 @@ export function useAdminMap() {
   )
   const isAnyDrawModeActive = computed(() => isDrawMode.value || isHazardPlacementActive.value)
 
+  function buildZoningLayersSignature(layers: ZoningLayer[]): string {
+    return layers
+      .map((layer) => `${layer.id}|${layer.is_active}|${layer.updated_at}`)
+      .join('||')
+  }
+
+  function buildMappedZonesSignature(zones: MappedZone[]): string {
+    return zones
+      .map((zone) => {
+        const points = zone.points
+          .map((point) => `${point.lat.toFixed(6)},${point.lng.toFixed(6)}`)
+          .join(';')
+
+        return [
+          zone.id,
+          zone.zoning_layer_id,
+          zone.is_visible,
+          zone.updated_at,
+          zone.zoning_color,
+          points,
+        ].join('|')
+      })
+      .join('||')
+  }
+
   // ── Barangay borders ───────────────────────────────────────────────────────
   async function toggleBarangayBorders(): Promise<void> {
     if (!showBarangayBorders.value) {
@@ -125,7 +150,12 @@ export function useAdminMap() {
   async function loadZoningLayers(): Promise<void> {
     zoningError.value = ''
     try {
-      zoningLayers.value = await listCityZoningLayers()
+      const nextLayers = await listCityZoningLayers()
+      if (buildZoningLayersSignature(nextLayers) === buildZoningLayersSignature(zoningLayers.value)) {
+        return
+      }
+
+      zoningLayers.value = nextLayers
     } catch (error) {
       zoningError.value = error instanceof Error ? error.message : 'Failed to load zoning layers.'
     }
@@ -134,7 +164,12 @@ export function useAdminMap() {
   async function loadMappedZones(): Promise<void> {
     zoningError.value = ''
     try {
-      mappedZones.value = await listCityMappedZones()
+      const nextZones = await listCityMappedZones()
+      if (buildMappedZonesSignature(nextZones) === buildMappedZonesSignature(mappedZones.value)) {
+        return
+      }
+
+      mappedZones.value = nextZones
     } catch (error) {
       zoningError.value = error instanceof Error ? error.message : 'Failed to load mapped zones.'
     }
