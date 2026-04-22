@@ -16,7 +16,7 @@ import { useAlertContext } from '@/composables/useAlert'
 import { AuthServiceError, signUpWithEmail } from '@/services/auth.service'
 import { fetchPhilippineCities } from '@/services/cities.service'
 import type { CityOption } from '@/services/cities.service'
-import logoImage from '@/assets/images/logo.png'
+import logoImage from '/register.png'
 import { Loader2 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -363,11 +363,11 @@ const handleSubmit = async (): Promise<void> => {
             </FieldDescription>
           </FieldGroup>
         </form>
-        <div class="bg-muted relative hidden md:block">
+        <div class="bg-muted relative hidden md:flex items-center justify-center overflow-hidden">
           <img
             :src="logoImage"
-            alt="Image"
-            class="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+            alt="BizNest Mascot"
+            class="h-full w-full object-contain scale-175"
           />
         </div>
       </CardContent>
