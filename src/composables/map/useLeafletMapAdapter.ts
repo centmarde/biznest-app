@@ -24,9 +24,13 @@ type MapClickHandler = (point: MapDrawPoint) => void
 type DrawPointMoveHandler = (index: number, point: MapDrawPoint) => void
 type MapThemeMode = 'light' | 'dark'
 
-const LEAFLET_LIGHT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-const LEAFLET_DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-const LEAFLET_LIGHT_NO_POI_TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+const LEAFLET_DEFAULT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+const LEAFLET_NO_POI_TILE_URL =
+  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png'
+const LEAFLET_DARK_TILE_URL =
+  'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png'
+const LEAFLET_DARK_NO_POI_TILE_URL =
+  'https://{s}.basemaps.cartocdn.com/rastertiles/dark_nolabels/{z}/{x}/{y}{r}.png'
 const LEAFLET_LIGHT_ATTRIBUTION = '&copy; OpenStreetMap contributors'
 const LEAFLET_DARK_ATTRIBUTION = '&copy; OpenStreetMap contributors &copy; CARTO'
 
@@ -63,14 +67,11 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     let attribution: string
 
     if (currentTheme === 'dark') {
-      tileUrl = LEAFLET_DARK_TILE_URL
+      tileUrl = showPoi ? LEAFLET_DARK_TILE_URL : LEAFLET_DARK_NO_POI_TILE_URL
       attribution = LEAFLET_DARK_ATTRIBUTION
-    } else if (showPoi) {
-      tileUrl = LEAFLET_LIGHT_TILE_URL
-      attribution = LEAFLET_LIGHT_ATTRIBUTION
     } else {
-      tileUrl = LEAFLET_LIGHT_NO_POI_TILE_URL
-      attribution = LEAFLET_DARK_ATTRIBUTION
+      tileUrl = showPoi ? LEAFLET_DEFAULT_TILE_URL : LEAFLET_NO_POI_TILE_URL
+      attribution = showPoi ? LEAFLET_LIGHT_ATTRIBUTION : LEAFLET_DARK_ATTRIBUTION
     }
 
     leafletBaseTiles = L.tileLayer(tileUrl, {
@@ -79,6 +80,10 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     })
 
     leafletBaseTiles.addTo(leafletMap)
+
+    // Dark mode uses a softer visual filter to keep map colors readable.
+    const mapContainer = leafletMap.getContainer()
+    mapContainer.classList.toggle('leaflet-theme-dark', currentTheme === 'dark')
   }
 
   function applyLeafletCursor(): void {
@@ -167,6 +172,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     }
 
     if (leafletMap) {
+      leafletMap.getContainer().classList.remove('leaflet-theme-dark')
       leafletMap.getContainer().style.cursor = ''
       leafletMap.remove()
       leafletMap = null

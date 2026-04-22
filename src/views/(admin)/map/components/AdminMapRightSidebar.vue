@@ -121,17 +121,9 @@ function handleStartDrawZone(): void {
     <Card class="flex h-full flex-col rounded-none border-0 shadow-none py-0">
       <CardHeader class="shrink-0 border-b py-4">
         <CardTitle class="flex items-center justify-between text-base">
-          <button
-            type="button"
-            class="flex min-w-0 flex-1 items-center gap-2 text-left"
-            @click="showLayerList = !showLayerList"
-          >
+          <div class="flex min-w-0 flex-1 items-center gap-2 text-left">
             <TypographyP as="span" class="m-0 leading-none">Zone Layer</TypographyP>
-            <ChevronRight
-              class="h-4 w-4 transition-transform"
-              :class="showLayerList ? 'rotate-90' : ''"
-            />
-          </button>
+          </div>
 
           <div class="ml-3 flex items-center gap-1">
             <Badge variant="secondary">{{ layers.length }}</Badge>
