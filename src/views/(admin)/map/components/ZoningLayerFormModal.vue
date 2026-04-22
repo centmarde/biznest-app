@@ -85,7 +85,7 @@ function submitForm(): void {
         </div>
 
         <div class="space-y-1">
-          <label class="text-xs font-medium">Description</label>
+          <label class="text-xs font-medium">Description (Optional)</label>
           <textarea
             v-model="form.description"
             rows="3"

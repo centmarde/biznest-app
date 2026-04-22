@@ -85,7 +85,7 @@ const {
   <div class="relative h-full w-full overflow-hidden">
 
     <!-- ── Map canvas ────────────────────────────────────────────────── -->
-    <div class="relative h-full w-full">
+    <div class="relative h-full w-full pr-11">
       <Map ref="mapRef" :provider="provider" :center="mapCenter" @ready="onMapReady" />
 
       <!-- Floating map-provider selector (top-left over the map) -->
