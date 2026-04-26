@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, type HTMLAttributes } from 'vue'
+import { onMounted, ref, type HTMLAttributes } from 'vue'
 import { useRouter } from 'vue-router'
 import { cn } from '@/lib/utils'
+import { useRegisterFormSubmit } from '../composables/registerFormSubmit'
+import { fetchPhilippineCities } from '@/services/cities.service'
+import type { CityOption } from '@/services/cities.service'
+
+
+//ui components e separate ni for better readability, since there are a lot of them
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -19,24 +25,9 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from '@/components/ui/field'
-import logoImage from '@/assets/images/logo.png'
 import { Input } from '@/components/ui/input'
-
-import {
-  confirmedValidator,
-  emailValidator,
-  passwordValidator,
-  requiredValidator,
-} from '@/utils/validators'
-
-//separate UI components and logic for better readability and maintainability
-import { useAlertContext } from '@/composables/useAlert'
-import { AuthServiceError, signUpWithEmail } from '@/services/auth.service'
-import { fetchPhilippineCities } from '@/services/cities.service'
-import type { CityOption } from '@/services/cities.service'
-import { Check} from 'lucide-vue-next'
+import { Check } from 'lucide-vue-next'
 import logoImage from '/register.png'
 import { Loader2 } from 'lucide-vue-next'
 
@@ -45,48 +36,31 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
-const { showAlert, showSuccess } = useAlertContext()
-const showPassword = ref(false)
-const showConfirmPassword = ref(false)
-const email = ref('')
-const username = ref('')
-const cityId = ref('')
-const password = ref('')
-const confirmPassword = ref('')
+
+// Form state
 const cities = ref<CityOption[]>([])
 const isFetchingCities = ref(false)
-const isSubmitting = ref(false)
-const errorMessage = ref('')
 
-const touched = ref({
-  email: false,
-  username: false,
-  city: false,
-  password: false,
-  confirmPassword: false,
+// Use the form submission composable
+const {
+  email,
+  username,
+  cityId,
+  password,
+  confirmPassword,
+  showPassword,
+  showConfirmPassword,
+  isSubmitting,
+  fieldErrors,
+  getCityDisplayValue,
+  handleSubmit,
+} = useRegisterFormSubmit({
+  cities,
+  isFetchingCities,
+  router,
 })
 
-const fieldErrors = ref({
-  email: null as string | null,
-  username: null as string | null,
-  city: null as string | null,
-  password: null as string | null,
-  confirmPassword: null as string | null,
-})
-
-const selectedCityName = computed(() => {
-  if (!cityId.value) {
-    return ''
-  }
-
-  return cities.value.find((city) => city.id === cityId.value)?.name ?? ''
-})
-
-const getCityDisplayValue = (val: unknown): string => {
-  if (typeof val !== 'string' || !val) return ''
-  return cities.value.find((city) => city.id === val)?.name ?? ''
-}
-
+// Fetch cities on mount
 const fetchCities = async (): Promise<void> => {
   if (cities.value.length > 0) {
     return
@@ -96,11 +70,9 @@ const fetchCities = async (): Promise<void> => {
 
   try {
     cities.value = await fetchPhilippineCities()
-  } catch (error) {
-    showErrorAlert(
-      error instanceof Error ? error.message : 'Unable to load cities.',
-      'City list error',
-    )
+  } catch {
+    // Error handling is done in the composable via showAlert
+	console.log('Error fetching cities, handled in composable')
   } finally {
     isFetchingCities.value = false
   }
@@ -110,164 +82,8 @@ onMounted(() => {
   void fetchCities()
 })
 
-const getValidatorMessage = (result: boolean | string): string | null => {
-  if (result === true) return null
-  return typeof result === 'string' ? result : 'Invalid value'
-}
-
-const validateField = (...results: Array<boolean | string>): string | null => {
-  for (const result of results) {
-    const message = getValidatorMessage(result)
-    if (message) return message
-  }
-
-  return null
-}
-
-const updateEmailError = (): void => {
-  fieldErrors.value.email = touched.value.email
-    ? validateField(requiredValidator(email.value), emailValidator(email.value))
-    : null
-}
-
-const updateUsernameError = (): void => {
-  fieldErrors.value.username = touched.value.username
-    ? validateField(requiredValidator(username.value))
-    : null
-}
-
-const updateCityError = (): void => {
-  fieldErrors.value.city = touched.value.city ? validateField(requiredValidator(cityId.value)) : null
-}
-
-const updatePasswordError = (): void => {
-  fieldErrors.value.password = touched.value.password
-    ? validateField(requiredValidator(password.value), passwordValidator(password.value))
-    : null
-}
-
-const updateConfirmPasswordError = (): void => {
-  fieldErrors.value.confirmPassword = touched.value.confirmPassword
-    ? validateField(
-        requiredValidator(confirmPassword.value),
-        confirmedValidator(confirmPassword.value, password.value),
-      )
-    : null
-}
-
-const updateAllFieldErrors = (): void => {
-  updateEmailError()
-  updateUsernameError()
-  updateCityError()
-  updatePasswordError()
-  updateConfirmPasswordError()
-}
-
-const getFirstFieldError = (): string | null => {
-  return (
-    fieldErrors.value.email ||
-    fieldErrors.value.username ||
-    fieldErrors.value.city ||
-    fieldErrors.value.password ||
-    fieldErrors.value.confirmPassword ||
-    null
-  )
-}
-
-watch(email, () => {
-  if (!touched.value.email) touched.value.email = true
-  if (isSubmitting.value) return
-  updateEmailError()
-})
-
-watch(username, () => {
-  if (!touched.value.username) touched.value.username = true
-  if (isSubmitting.value) return
-  updateUsernameError()
-})
-
-watch(cityId, () => {
-  if (!touched.value.city) touched.value.city = true
-  if (isSubmitting.value) return
-  updateCityError()
-})
-
-watch(password, () => {
-  if (!touched.value.password) touched.value.password = true
-  if (isSubmitting.value) return
-  updatePasswordError()
-  updateConfirmPasswordError()
-})
-
-watch(confirmPassword, () => {
-  if (!touched.value.confirmPassword) touched.value.confirmPassword = true
-  if (isSubmitting.value) return
-  updateConfirmPasswordError()
-})
-
-const handleSubmit = async (): Promise<void> => {
-  errorMessage.value = ''
-
-  touched.value.email = true
-  touched.value.username = true
-  touched.value.city = true
-  touched.value.password = true
-  touched.value.confirmPassword = true
-  updateAllFieldErrors()
-
-  const firstError = getFirstFieldError()
-  if (firstError) {
-    errorMessage.value = firstError
-    return
-  }
-
-  isSubmitting.value = true
-
-  try {
-    const inviteQuery = router.currentRoute.value.query.invite
-    const inviteToken = typeof inviteQuery === 'string' ? inviteQuery : undefined
-
-    const response = await signUpWithEmail({
-      username: normalizedUsername,
-      email: normalizedEmail,
-      password: password.value,
-      city_id: cityId.value,
-      city_name: selectedCityName.value,
-      inviteToken,
-    })
-
-    if (response.session) {
-      showSuccess('Your account has been created and you are now signed in.', {
-        title: 'Account created',
-      })
-      await router.push('/')
-      return
-    }
-
-    showSuccess('Check your inbox to confirm your email before signing in.', {
-      title: 'Account created',
-      durationMs: 4500,
-    })
-    await router.push('/auth')
-
-    password.value = ''
-    confirmPassword.value = ''
-  } catch (error) {
-    if (error instanceof AuthServiceError) {
-      showErrorAlert(error.message)
-      return
-    }
-
-    if (error instanceof Error) {
-      showErrorAlert(error.message)
-      return
-    }
-
-    showErrorAlert('Unable to create your account right now.')
-  } finally {
-    isSubmitting.value = false
-  }
-}
+// Re-export handleSubmit for the form submit event
+// The composable's handleSubmit is already bound to the form state
 </script>
 
 <template>
