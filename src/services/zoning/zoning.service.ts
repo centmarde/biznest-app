@@ -22,9 +22,7 @@ async function getCurrentCityId(): Promise<string> {
   }
 
   const metadata = (data.user.user_metadata ?? {}) as Record<string, unknown>
-  const cityId = typeof metadata.city_id === 'string'
-    ? metadata.city_id.trim()
-    : ''
+  const cityId = typeof metadata.city_id === 'string' ? metadata.city_id.trim() : ''
 
   if (!cityId) {
     throw new Error('Missing city_id in account metadata. Contact an administrator.')
@@ -56,25 +54,25 @@ function normalizePolygonPoints(points: MapDrawPoint[]): [number, number][] {
 
 function toMappedZone(row: MappedZoneRpcRow): MappedZone {
   const coordinates = row.geometry?.coordinates
-  const outerRing = Array.isArray(coordinates) && Array.isArray(coordinates[0])
-    ? coordinates[0]
-    : []
+  const outerRing =
+    Array.isArray(coordinates) && Array.isArray(coordinates[0]) ? coordinates[0] : []
 
   const points = Array.isArray(outerRing)
     ? outerRing
-      .filter((coordinate) => Array.isArray(coordinate) && coordinate.length >= 2)
-      .map((coordinate) => ({
-        lng: Number(coordinate[0]),
-        lat: Number(coordinate[1]),
-      }))
-      .filter((point) => !Number.isNaN(point.lat) && !Number.isNaN(point.lng))
+        .filter((coordinate) => Array.isArray(coordinate) && coordinate.length >= 2)
+        .map((coordinate) => ({
+          lng: Number(coordinate[0]),
+          lat: Number(coordinate[1]),
+        }))
+        .filter((point) => !Number.isNaN(point.lat) && !Number.isNaN(point.lng))
     : []
 
-  const normalizedPoints = points.length > 1
-    && points[0]?.lat === points[points.length - 1]?.lat
-    && points[0]?.lng === points[points.length - 1]?.lng
-    ? points.slice(0, -1)
-    : points
+  const normalizedPoints =
+    points.length > 1 &&
+    points[0]?.lat === points[points.length - 1]?.lat &&
+    points[0]?.lng === points[points.length - 1]?.lng
+      ? points.slice(0, -1)
+      : points
 
   return {
     id: row.id,

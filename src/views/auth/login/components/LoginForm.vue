@@ -155,7 +155,9 @@ const handleSubmit = async (): Promise<void> => {
 
             <FieldDescription class="text-center">
               Don't have an account?
-              <RouterLink :to="{ name: 'register' }" class="underline-offset-2 hover:underline">Sign up</RouterLink>
+              <RouterLink :to="{ name: 'register' }" class="underline-offset-2 hover:underline"
+                >Sign up</RouterLink
+              >
             </FieldDescription>
           </FieldGroup>
         </form>

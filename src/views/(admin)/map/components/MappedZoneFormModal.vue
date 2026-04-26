@@ -10,7 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { CreateMappedZoneInput, UpdateMappedZoneInput, ZoningLayer } from '@/types/zoning.types'
+import type {
+  CreateMappedZoneInput,
+  UpdateMappedZoneInput,
+  ZoningLayer,
+} from '@/types/zoning.types'
 
 const props = withDefaults(
   defineProps<{
@@ -48,7 +52,9 @@ const canSubmit = computed(() => {
   return form.name.trim().length > 0 && form.zoningLayerId.trim().length > 0 && !props.isSubmitting
 })
 
-const modalTitle = computed(() => (props.mode === 'add' ? 'Save Mapped Zone' : 'Update Mapped Zone'))
+const modalTitle = computed(() =>
+  props.mode === 'add' ? 'Save Mapped Zone' : 'Update Mapped Zone',
+)
 const submitLabel = computed(() => (props.mode === 'add' ? 'Save Zone' : 'Update Zone'))
 
 watch(
@@ -102,16 +108,15 @@ function submit(): void {
 </script>
 
 <template>
-  <div
-    v-if="open"
-    class="fixed inset-0 z-10000 flex items-center justify-center bg-black/40 p-4"
-  >
+  <div v-if="open" class="fixed inset-0 z-10000 flex items-center justify-center bg-black/40 p-4">
     <Card class="w-full max-w-md py-0">
       <CardHeader class="border-b py-4">
         <CardTitle class="text-base">{{ modalTitle }}</CardTitle>
       </CardHeader>
       <CardContent class="space-y-3 p-4">
-        <p v-if="mode === 'add'" class="text-xs text-muted-foreground">{{ pointCount }} polygon points captured.</p>
+        <p v-if="mode === 'add'" class="text-xs text-muted-foreground">
+          {{ pointCount }} polygon points captured.
+        </p>
 
         <div class="space-y-1">
           <label class="text-xs font-medium">Mapped Zone Name</label>

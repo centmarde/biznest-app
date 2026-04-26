@@ -37,7 +37,9 @@ const zones = computed(() => {
           class="min-w-0 flex-1 text-left"
           @click="emit('select-mapped-zone', zone.id)"
         >
-          <TypographySmall as="span" class="block truncate text-xs font-medium">{{ zone.name }}</TypographySmall>
+          <TypographySmall as="span" class="block truncate text-xs font-medium">{{
+            zone.name
+          }}</TypographySmall>
         </button>
         <Button
           variant="ghost"

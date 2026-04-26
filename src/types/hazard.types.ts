@@ -3,7 +3,13 @@ export type IsoDateTimeString = string
 export type Uuid = string
 
 export type HazardSeverity = 'low' | 'moderate' | 'high' | 'critical' | (string & {})
-export type HazardStatus = 'reported' | 'under_review' | 'active' | 'mitigated' | 'resolved' | (string & {})
+export type HazardStatus =
+  | 'reported'
+  | 'under_review'
+  | 'active'
+  | 'mitigated'
+  | 'resolved'
+  | (string & {})
 export type HazardGeometryType = 'point' | 'linestring' | 'polygon'
 
 export type HazardCoordinatesPoint = [number, number]
@@ -25,10 +31,7 @@ export interface HazardPolygonGeometry {
   coordinates: HazardCoordinatesPolygon
 }
 
-export type HazardGeometry =
-  | HazardPointGeometry
-  | HazardLineStringGeometry
-  | HazardPolygonGeometry
+export type HazardGeometry = HazardPointGeometry | HazardLineStringGeometry | HazardPolygonGeometry
 
 export interface HazardCategory {
   id: Uuid
@@ -93,7 +96,10 @@ export interface CreateHazardInput {
   attachments?: string[]
 }
 
-export type CreateHazardFormInput = Omit<CreateHazardInput, 'geometry' | 'geometry_type' | 'city_id'>
+export type CreateHazardFormInput = Omit<
+  CreateHazardInput,
+  'geometry' | 'geometry_type' | 'city_id'
+>
 
 export type UpdateHazardInput = Partial<
   Omit<Hazard, 'id' | 'created_at' | 'updated_at' | 'reported_by' | 'verified_by' | 'verified_at'>

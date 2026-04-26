@@ -21,7 +21,8 @@ withDefaults(
   {
     isSubmitting: false,
     title: 'Delete Zoning Layer?',
-    description: 'This action cannot be undone. This will permanently delete the selected zoning layer.',
+    description:
+      'This action cannot be undone. This will permanently delete the selected zoning layer.',
     confirmLabel: 'Delete',
   },
 )

@@ -73,7 +73,6 @@
   --z-index-10002: 10002;
 }
 
-
 :root {
   --radius: 0.625rem;
   --background: #f3f4f4;
@@ -150,8 +149,6 @@
   --sidebar-border: rgb(243 244 244 / 16%);
   --sidebar-ring: #fab95b;
 }
-
-
 
 @layer base {
   * {

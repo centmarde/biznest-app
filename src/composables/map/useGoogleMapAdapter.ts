@@ -41,7 +41,11 @@ const GOOGLE_DARK_STYLES: GoogleMapStyleRule[] = [
   { elementType: 'geometry', stylers: [{ color: '#1f2a44' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#e5e7eb' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#111827' }] },
-  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#3f4f72' }] },
+  {
+    featureType: 'administrative',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#3f4f72' }],
+  },
   { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#1a243a' }] },
   { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#273453' }] },
   { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#2d5b3f' }] },
@@ -487,7 +491,9 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     return googleMapsLoader.then(() => {
       const googleWindow = window as GoogleWindow
       if (googleWindow.__googleMapsAuthFailed) {
-        throw new Error('Google Maps authentication failed. Verify API key, billing, and allowed referrers.')
+        throw new Error(
+          'Google Maps authentication failed. Verify API key, billing, and allowed referrers.',
+        )
       }
     })
   }

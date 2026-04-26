@@ -1,7 +1,5 @@
 import { ref } from 'vue'
-import {
-  fetchNormalizedBarangayBordersForCurrentUser,
-} from '@/services/barangay-borders.service'
+import { fetchNormalizedBarangayBordersForCurrentUser } from '@/services/barangay-borders.service'
 import type { BarangayFeatureCollection } from '@/types/map.types'
 
 export function useBarangayBorders() {
@@ -16,15 +14,9 @@ export function useBarangayBorders() {
     errorMessage.value = ''
 
     try {
-      const {
-        geoRiskCityName,
-        borders,
-      } = await fetchNormalizedBarangayBordersForCurrentUser()
+      const { geoRiskCityName, borders } = await fetchNormalizedBarangayBordersForCurrentUser()
 
-      if (
-        activeGeoRiskCityName.value === geoRiskCityName
-        && barangayBorders.value
-      ) {
+      if (activeGeoRiskCityName.value === geoRiskCityName && barangayBorders.value) {
         return
       }
 

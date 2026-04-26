@@ -50,10 +50,10 @@ const normalizeName = (value: string): string => {
 
 const inPhilippineBounds = (lat: number, lng: number): boolean => {
   return (
-    lat >= PH_BOUNDS.minLat
-    && lat <= PH_BOUNDS.maxLat
-    && lng >= PH_BOUNDS.minLng
-    && lng <= PH_BOUNDS.maxLng
+    lat >= PH_BOUNDS.minLat &&
+    lat <= PH_BOUNDS.maxLat &&
+    lng >= PH_BOUNDS.minLng &&
+    lng <= PH_BOUNDS.maxLng
   )
 }
 

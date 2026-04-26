@@ -126,13 +126,16 @@ function pickBestNormalizedCity(
   const citySuffix = `${requested} City`
 
   const exactPriority = normalizedCandidates.find(
-    (candidate) => candidate === cityOfPrefix || candidate === citySuffix || candidate === requested,
+    (candidate) =>
+      candidate === cityOfPrefix || candidate === citySuffix || candidate === requested,
   )
 
   return exactPriority ?? normalizedCandidates[0] ?? null
 }
 
-export async function resolveGeoRiskCityName(input: ResolveGeoRiskCityInput): Promise<string | null> {
+export async function resolveGeoRiskCityName(
+  input: ResolveGeoRiskCityInput,
+): Promise<string | null> {
   const requestedNames = uniqueNames([
     ...(input.cityName ? buildNameVariants(input.cityName) : []),
     ...(input.legacyCity ? buildNameVariants(input.legacyCity) : []),

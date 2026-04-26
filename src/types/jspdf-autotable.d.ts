@@ -1,7 +1,7 @@
-import 'jspdf';
+import 'jspdf'
 
 declare module 'jspdf' {
   interface jsPDF {
-    autoTable: (options: import('jspdf-autotable').UserOptions) => jsPDF;
+    autoTable: (options: import('jspdf-autotable').UserOptions) => jsPDF
   }
 }

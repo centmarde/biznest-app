@@ -32,9 +32,9 @@ const mapContainer = ref<HTMLDivElement | null>(null)
 const mapError = ref('')
 let themeObserver: MutationObserver | null = null
 
-const googleMapsApiKeyMeta = document.querySelector('meta[name="google-maps-api-key"]') as
-  | HTMLMetaElement
-  | null
+const googleMapsApiKeyMeta = document.querySelector(
+  'meta[name="google-maps-api-key"]',
+) as HTMLMetaElement | null
 const googleMapsApiKey = googleMapsApiKeyMeta?.content?.trim() ?? ''
 
 function resolveGoogleMapsApiKey(): string {

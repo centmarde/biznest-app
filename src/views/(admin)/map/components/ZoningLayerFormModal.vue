@@ -33,7 +33,9 @@ const form = reactive<UpdateZoningLayerInput>({
   description: '',
 })
 
-const modalTitle = computed(() => (props.mode === 'add' ? 'Add Zoning Layer' : 'Update Zoning Layer'))
+const modalTitle = computed(() =>
+  props.mode === 'add' ? 'Add Zoning Layer' : 'Update Zoning Layer',
+)
 const submitLabel = computed(() => (props.mode === 'add' ? 'Save Layer' : 'Update Layer'))
 const canSubmit = computed(() => form.title.trim().length > 0 && !props.isSubmitting)
 
@@ -65,10 +67,7 @@ function submitForm(): void {
 </script>
 
 <template>
-  <div
-    v-if="open"
-    class="fixed inset-0 z-10000 flex items-center justify-center bg-black/40 p-4"
-  >
+  <div v-if="open" class="fixed inset-0 z-10000 flex items-center justify-center bg-black/40 p-4">
     <Card class="w-full max-w-md py-0">
       <CardHeader class="border-b py-4">
         <CardTitle class="text-base">{{ modalTitle }}</CardTitle>

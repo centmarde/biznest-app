@@ -3,11 +3,7 @@ import {
   fetchBarangayBordersSourceByCity,
   resolveGeoRiskCityName,
 } from '@/views/(admin)/map/composables/barangayBordersSource'
-import type {
-  BarangayFeature,
-  BarangayFeatureCollection,
-  BarangayLngLat,
-} from '@/types/map.types'
+import type { BarangayFeature, BarangayFeatureCollection, BarangayLngLat } from '@/types/map.types'
 
 interface UserCityLookupResult {
   geoRiskCityName: string
@@ -16,10 +12,10 @@ interface UserCityLookupResult {
 
 function isLngLat(value: unknown): value is BarangayLngLat {
   return (
-    Array.isArray(value)
-    && value.length >= 2
-    && typeof value[0] === 'number'
-    && typeof value[1] === 'number'
+    Array.isArray(value) &&
+    value.length >= 2 &&
+    typeof value[0] === 'number' &&
+    typeof value[1] === 'number'
   )
 }
 
@@ -29,8 +25,12 @@ function isPolygonCoordinates(value: unknown): value is BarangayLngLat[][] {
 
 function isMultiPolygonCoordinates(value: unknown): value is BarangayLngLat[][][] {
   return (
-    Array.isArray(value)
-    && value.every((polygon) => Array.isArray(polygon) && polygon.every((ring) => Array.isArray(ring) && ring.every(isLngLat)))
+    Array.isArray(value) &&
+    value.every(
+      (polygon) =>
+        Array.isArray(polygon) &&
+        polygon.every((ring) => Array.isArray(ring) && ring.every(isLngLat)),
+    )
   )
 }
 

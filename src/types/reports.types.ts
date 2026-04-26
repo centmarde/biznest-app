@@ -24,27 +24,27 @@ export interface Tab {
 }
 
 export interface ReportHeaderProps {
-  loading?: boolean;
-  error?: string | null;
+  loading?: boolean
+  error?: string | null
 }
 
 export interface ReportsTableProps {
-  tableData?: TableRow[];
-  content?: string;
+  tableData?: TableRow[]
+  content?: string
 }
 
 export interface TabAndExportButtonsProps {
-  tabs: Tab[];
-  value: number;
-  canExport: boolean;
+  tabs: Tab[]
+  value: number
+  canExport: boolean
 }
 
 export interface ReportProps {
-  loading?: boolean;
-  error?: string | null;
-  tableData?: TableRow[];
-  content?: string;
-  tabs: Tab[];
-  value: number;
-  canExport: boolean;
+  loading?: boolean
+  error?: string | null
+  tableData?: TableRow[]
+  content?: string
+  tabs: Tab[]
+  value: number
+  canExport: boolean
 }

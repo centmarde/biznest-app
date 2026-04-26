@@ -137,7 +137,9 @@ export function useRegisterFormSubmit({
   }
 
   const updateCityError = (): void => {
-    fieldErrors.value.city = touched.value.city ? validateField(requiredValidator(cityId.value)) : null
+    fieldErrors.value.city = touched.value.city
+      ? validateField(requiredValidator(cityId.value))
+      : null
   }
 
   const updatePasswordError = (): void => {

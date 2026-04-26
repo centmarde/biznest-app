@@ -6,7 +6,6 @@ import { useRegisterFormSubmit } from '../composables/registerFormSubmit'
 import { fetchPhilippineCities } from '@/services/cities.service'
 import type { CityOption } from '@/services/cities.service'
 
-
 //ui components e separate ni for better readability, since there are a lot of them
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -19,13 +18,7 @@ import {
   ComboboxItemIndicator,
   ComboboxList,
 } from '@/components/ui/combobox'
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '@/components/ui/field'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Check } from 'lucide-vue-next'
 import logoImage from '/register.png'
@@ -72,7 +65,7 @@ const fetchCities = async (): Promise<void> => {
     cities.value = await fetchPhilippineCities()
   } catch {
     // Error handling is done in the composable via showAlert
-	console.log('Error fetching cities, handled in composable')
+    console.log('Error fetching cities, handled in composable')
   } finally {
     isFetchingCities.value = false
   }
@@ -289,7 +282,9 @@ onMounted(() => {
                       >
                     </button>
                   </div>
-                  <FieldError v-if="fieldErrors.confirmPassword">{{ fieldErrors.confirmPassword }}</FieldError>
+                  <FieldError v-if="fieldErrors.confirmPassword">{{
+                    fieldErrors.confirmPassword
+                  }}</FieldError>
                 </Field>
               </Field>
               <FieldDescription> Must be at least 8 characters long. </FieldDescription>
@@ -302,7 +297,9 @@ onMounted(() => {
 
             <FieldDescription class="text-center">
               Already have an account?
-              <RouterLink :to="{ name: 'login' }" class="underline-offset-2 hover:underline">Sign in</RouterLink>
+              <RouterLink :to="{ name: 'login' }" class="underline-offset-2 hover:underline"
+                >Sign in</RouterLink
+              >
             </FieldDescription>
           </FieldGroup>
         </form>

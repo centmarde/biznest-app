@@ -35,7 +35,7 @@ const LEAFLET_LIGHT_ATTRIBUTION = '&copy; OpenStreetMap contributors'
 const LEAFLET_DARK_ATTRIBUTION = '&copy; OpenStreetMap contributors &copy; CARTO'
 
 const DRAW_MODE_CURSOR =
-  'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M4 20l4-1 9.5-9.5-3-3L5 16z\' fill=\'%231f2937\'/%3E%3Cpath d=\'M14.5 6.5l3 3 1-1a1.6 1.6 0 000-2.2l-.8-.8a1.6 1.6 0 00-2.2 0z\' fill=\'%230f172a\'/%3E%3C/svg%3E") 2 20, crosshair'
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 20l4-1 9.5-9.5-3-3L5 16z' fill='%231f2937'/%3E%3Cpath d='M14.5 6.5l3 3 1-1a1.6 1.6 0 000-2.2l-.8-.8a1.6 1.6 0 00-2.2 0z' fill='%230f172a'/%3E%3C/svg%3E\") 2 20, crosshair"
 
 export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
   let leafletMap: LeafletMap | null = null
@@ -347,13 +347,13 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
 
     hazards.forEach((hazard) => {
       const buildPopupContent = (): HTMLDivElement => {
-        const container = document.createElement("div");
-        const title = document.createElement("strong")
+        const container = document.createElement('div')
+        const title = document.createElement('strong')
         title.textContent = hazard.name
-        const meta = document.createElement("div")
+        const meta = document.createElement('div')
         meta.textContent = hazard.severity
-        container.append(title, document.createElement("br"), meta)
-        return container;
+        container.append(title, document.createElement('br'), meta)
+        return container
       }
 
       if (hazard.geometry.type === 'Point') {

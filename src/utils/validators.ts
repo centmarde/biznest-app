@@ -139,7 +139,7 @@ export const alphaDashValidator = (value: unknown) => {
 export const fileSizeValidator = (value: FileList | File[] | null | undefined) => {
   if (isEmpty(value)) return true
 
-  const file = Array.isArray(value) ? value[0] : value?.item(0) ?? undefined
+  const file = Array.isArray(value) ? value[0] : (value?.item(0) ?? undefined)
   if (!file) return true
 
   return file.size < 5 * 1024 * 1024 || 'File size should be less than 5 MB'
@@ -151,7 +151,7 @@ export const imageValidator = (value: FileList | File[] | null | undefined) => {
 
   const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 
-  const file = Array.isArray(value) ? value[0] : value?.item(0) ?? undefined
+  const file = Array.isArray(value) ? value[0] : (value?.item(0) ?? undefined)
   if (!file) return true
 
   if (file.size >= 2 * 1024 * 1024) return 'Only image files are allowed. Max size of 2MB.'

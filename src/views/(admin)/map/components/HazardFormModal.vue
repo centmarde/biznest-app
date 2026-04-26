@@ -11,13 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import type {
   CreateHazardFormInput,
   Hazard,
@@ -29,7 +23,13 @@ import type {
 } from '@/types/hazard.types'
 
 const severityOptions: HazardSeverity[] = ['low', 'moderate', 'high', 'critical']
-const statusOptions: HazardStatus[] = ['reported', 'under_review', 'active', 'mitigated', 'resolved']
+const statusOptions: HazardStatus[] = [
+  'reported',
+  'under_review',
+  'active',
+  'mitigated',
+  'resolved',
+]
 const geometryOptions: HazardGeometryType[] = ['point', 'linestring', 'polygon']
 const placementLabels: Record<HazardGeometryType, string> = {
   point: 'Pin',
@@ -235,7 +235,14 @@ function submit(): void {
 </script>
 
 <template>
-  <Sheet :open="open" @update:open="(val) => { if (!val) emit('close') }">
+  <Sheet
+    :open="open"
+    @update:open="
+      (val) => {
+        if (!val) emit('close')
+      }
+    "
+  >
     <SheetContent
       side="right"
       class="flex flex-col gap-0 p-0 sm:max-w-[41.6667vw] w-full overflow-hidden"
@@ -258,16 +265,14 @@ function submit(): void {
                 <SelectValue :placeholder="isLoadingCategories ? 'Loading…' : 'Select category'" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem
-                  v-for="cat in resolvedCategories"
-                  :key="cat.id"
-                  :value="cat.id"
-                >
+                <SelectItem v-for="cat in resolvedCategories" :key="cat.id" :value="cat.id">
                   {{ cat.label }}
                 </SelectItem>
               </SelectContent>
             </Select>
-            <p v-if="categoryFetchError" class="text-xs text-destructive">{{ categoryFetchError }}</p>
+            <p v-if="categoryFetchError" class="text-xs text-destructive">
+              {{ categoryFetchError }}
+            </p>
           </div>
 
           <div class="space-y-1">
@@ -362,7 +367,9 @@ function submit(): void {
                     : '[[[125.54, 8.94], [125.55, 8.94], [125.55, 8.95], [125.54, 8.94]]]'
               "
             />
-            <p v-if="parseError.message" class="text-xs text-destructive">{{ parseError.message }}</p>
+            <p v-if="parseError.message" class="text-xs text-destructive">
+              {{ parseError.message }}
+            </p>
           </div>
         </div>
       </div>

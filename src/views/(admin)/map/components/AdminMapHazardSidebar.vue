@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { AlertTriangle, ChevronRight, Eye, EyeOff, Pencil, Plus, RefreshCcw, Trash2, X } from 'lucide-vue-next'
+import {
+  AlertTriangle,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Pencil,
+  Plus,
+  RefreshCcw,
+  Trash2,
+  X,
+} from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -66,9 +76,7 @@ const expandedCategoryIds = ref<Set<string>>(new Set())
 // ── Computed ───────────────────────────────────────────────────────────────
 
 const groupedHazards = computed((): HazardGroup[] => {
-  const categoryMap = new Map<string, HazardCategory>(
-    props.categories.map((cat) => [cat.id, cat]),
-  )
+  const categoryMap = new Map<string, HazardCategory>(props.categories.map((cat) => [cat.id, cat]))
 
   const groupMap = new Map<string, HazardGroup>()
 
@@ -148,7 +156,6 @@ function submitUpdate(payload: UpdateHazardInput): void {
 <template>
   <aside class="flex h-full w-80 shrink-0 flex-col border-l">
     <Card class="flex h-full flex-col rounded-none border-0 shadow-none py-0">
-
       <!-- Header -->
       <CardHeader class="shrink-0 border-b py-4">
         <CardTitle class="flex items-center justify-between text-base">
@@ -175,9 +182,15 @@ function submitUpdate(payload: UpdateHazardInput): void {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" class="z-10002">
-                <DropdownMenuItem @click="emit('start-create-hazard', 'point')">Pin</DropdownMenuItem>
-                <DropdownMenuItem @click="emit('start-create-hazard', 'linestring')">Draw Line</DropdownMenuItem>
-                <DropdownMenuItem @click="emit('start-create-hazard', 'polygon')">Draw Polygon</DropdownMenuItem>
+                <DropdownMenuItem @click="emit('start-create-hazard', 'point')"
+                  >Pin</DropdownMenuItem
+                >
+                <DropdownMenuItem @click="emit('start-create-hazard', 'linestring')"
+                  >Draw Line</DropdownMenuItem
+                >
+                <DropdownMenuItem @click="emit('start-create-hazard', 'polygon')"
+                  >Draw Polygon</DropdownMenuItem
+                >
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -190,7 +203,6 @@ function submitUpdate(payload: UpdateHazardInput): void {
 
       <!-- Content -->
       <CardContent class="flex-1 overflow-y-auto p-0">
-
         <!-- Status messages -->
         <div v-if="props.isLoading || props.errorMessage" class="px-4 pt-3">
           <TypographyMuted v-if="props.isLoading" as="p" class="text-xs">
@@ -202,10 +214,7 @@ function submitUpdate(payload: UpdateHazardInput): void {
         </div>
 
         <!-- Empty state -->
-        <div
-          v-if="groupedHazards.length === 0 && !props.isLoading"
-          class="px-4 pt-4"
-        >
+        <div v-if="groupedHazards.length === 0 && !props.isLoading" class="px-4 pt-4">
           <div class="rounded-md border p-3">
             <TypographySmall as="p" class="text-xs text-muted-foreground">
               No hazards found.
@@ -216,7 +225,6 @@ function submitUpdate(payload: UpdateHazardInput): void {
         <!-- Category groups -->
         <div v-else class="py-2">
           <div v-for="group in groupedHazards" :key="group.categoryId">
-
             <!-- Category row -->
             <div class="flex items-center gap-1 px-2 py-1 hover:bg-muted/40">
               <!-- Expand toggle + label -->
@@ -232,7 +240,9 @@ function submitUpdate(payload: UpdateHazardInput): void {
                 <TypographySmall
                   as="span"
                   class="flex-1 truncate text-sm font-medium"
-                  :class="isCategoryHidden(group.categoryId) ? 'text-muted-foreground line-through' : ''"
+                  :class="
+                    isCategoryHidden(group.categoryId) ? 'text-muted-foreground line-through' : ''
+                  "
                 >
                   {{ group.label }}
                 </TypographySmall>
@@ -247,7 +257,11 @@ function submitUpdate(payload: UpdateHazardInput): void {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                :title="isCategoryHidden(group.categoryId) ? `Show ${group.label} hazards` : `Hide ${group.label} hazards`"
+                :title="
+                  isCategoryHidden(group.categoryId)
+                    ? `Show ${group.label} hazards`
+                    : `Hide ${group.label} hazards`
+                "
                 @click="emit('toggle-category', group.categoryId)"
               >
                 <Eye v-if="!isCategoryHidden(group.categoryId)" class="h-4 w-4" />
@@ -310,10 +324,8 @@ function submitUpdate(payload: UpdateHazardInput): void {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
-
       </CardContent>
     </Card>
 

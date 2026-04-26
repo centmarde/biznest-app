@@ -28,11 +28,13 @@ export const useReportsStore = defineStore('reports', () => {
     error.value = null
 
     const supabase = getSupabaseClient()
-    
+
     // Fetch all reports from Supabase table
     const { data, error: fetchError } = await supabase
       .from('reports')
-      .select('businessowner, contactnumber, businesslocation, zoningclassification, geotag, label, created_at')
+      .select(
+        'businessowner, contactnumber, businesslocation, zoningclassification, geotag, label, created_at',
+      )
       .order('created_at', { ascending: false })
 
     if (fetchError) {
@@ -56,10 +58,10 @@ export const useReportsStore = defineStore('reports', () => {
             zoningClassification: row.zoningclassification || '',
             geotag: row.geotag || '',
           }
-          
+
           // Add to all reports
           allReportsData.push(tableRow)
-          
+
           // Group by label
           const label: string = row.label || 'Uncategorized'
           if (!groupedData[label]) {
@@ -70,10 +72,10 @@ export const useReportsStore = defineStore('reports', () => {
 
         // Build tabs array with constant order
         tabs.value = []
-        
+
         for (let i = 0; i < CONSTANT_TABS.length; i++) {
           const tabLabel = CONSTANT_TABS[i] as string
-          
+
           if (tabLabel === 'All Reports') {
             // All Reports shows all data
             tabs.value.push({
@@ -92,13 +94,12 @@ export const useReportsStore = defineStore('reports', () => {
         }
       } else {
         // Still build tabs, just with no data
-        tabs.value = CONSTANT_TABS.map(label => ({
+        tabs.value = CONSTANT_TABS.map((label) => ({
           label,
           content: label === 'All Reports' ? 'No Reports Found' : `No Reports Found for "${label}"`,
           tableData: [],
         }))
       }
-      
     }
 
     loading.value = false

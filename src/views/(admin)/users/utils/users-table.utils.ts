@@ -50,7 +50,6 @@ export const getUserRoleCounts = (rows: UserRow[]): UserRoleCounts => {
   )
 }
 
-
 export const exportUsersToCsv = (rows: UserRow[]): void => {
   if (rows.length === 0) return
 

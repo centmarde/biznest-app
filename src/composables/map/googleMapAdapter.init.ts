@@ -54,7 +54,11 @@ export function loadGoogleMapsScript(
     script.onload = () => {
       // gm_authFailure is invoked by the Google SDK when key auth or billing checks fail.
       if (googleWindow.__googleMapsAuthFailed) {
-        reject(new Error('Google Maps authentication failed. Verify API key, billing, and allowed referrers.'))
+        reject(
+          new Error(
+            'Google Maps authentication failed. Verify API key, billing, and allowed referrers.',
+          ),
+        )
         return
       }
 
@@ -97,7 +101,9 @@ export async function initializeGoogleMapInstance(options: {
 
   // Advanced Markers require a valid mapId; skip when not configured.
   if (options.mapId && typeof googleMaps.importLibrary === 'function') {
-    const markerLibrary = (await googleMaps.importLibrary('marker')) as unknown as AdvancedMarkerLibrary
+    const markerLibrary = (await googleMaps.importLibrary(
+      'marker',
+    )) as unknown as AdvancedMarkerLibrary
     AdvancedMarkerElement = markerLibrary.AdvancedMarkerElement
   } else if (options.mapId) {
     AdvancedMarkerElement = googleMaps.marker?.AdvancedMarkerElement
